@@ -478,7 +478,7 @@ export const addTripActivity = async (tripId, stopId, activityData) => {
 
 export const updateTripActivity = async (tripId, activityId, activityData) => {
   if (!USE_MOCK) {
-    const response = await apiClient.put(`/trip-activities/${activityId}`, activityData);
+    const response = await apiClient.put(`/activities/${activityId}`, activityData);
     return response.data;
   }
   await delay();

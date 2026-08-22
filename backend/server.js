@@ -60,6 +60,7 @@ const getFullTripDetails = async (tripId) => {
         name: a.name,
         category: a.category,
         cost: Number(a.cost),
+        participantCount: Number(a.participant_count || 1),
         time: a.time,
         selected: Boolean(a.selected),
         isCustom: Boolean(a.is_custom),
@@ -81,7 +82,7 @@ const getFullTripDetails = async (tripId) => {
   });
 
   let calculatedEst = stopsWithActivities.reduce((acc, stop) => {
-    const actSum = (stop.activities || []).reduce((aSum, a) => aSum + (Number(a.cost) || 0), 0);
+    const actSum = (stop.activities || []).reduce((aSum, a) => aSum + (Number(a.cost) || 0) * (Number(a.participantCount) || 1), 0);
     return acc + actSum + (Number(stop.accommodationCost) || 0) + (Number(stop.transportCost) || 0);
   }, 0);
 
@@ -575,12 +576,12 @@ app.get('/api/activities', async (req, res) => {
 app.post('/api/trips/:id/activities', async (req, res) => {
   try {
     const tripId = req.params.id;
-    const { stopId, activityId, name, category, cost, time, isCustom, image } = req.body;
+    const { stopId, activityId, name, category, cost, participantCount, time, isCustom, image } = req.body;
     const actId = `tact_${Date.now()}`;
 
     await pool.query(
-      `INSERT INTO trip_activities (id, trip_id, stop_id, activity_id, name, category, cost, time, selected, is_custom, image)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO trip_activities (id, trip_id, stop_id, activity_id, name, category, cost, participant_count, time, selected, is_custom, image)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         actId,
         tripId,
@@ -589,6 +590,7 @@ app.post('/api/trips/:id/activities', async (req, res) => {
         name,
         category || 'Sightseeing',
         Number(cost) || 0,
+        Number(participantCount) || 1,
         time || '10:00',
         1,
         isCustom ? 1 : 0,
@@ -596,10 +598,42 @@ app.post('/api/trips/:id/activities', async (req, res) => {
       ]
     );
 
-    res.status(201).json({ id: actId, tripId, stopId, name, category, cost, time, selected: true, isCustom: Boolean(isCustom) });
+    res.status(201).json({ id: actId, tripId, stopId, name, category, cost, participantCount: Number(participantCount) || 1, time, selected: true, isCustom: Boolean(isCustom) });
   } catch (error) {
     console.error('Add activity error:', error);
     res.status(500).json({ message: 'Failed to add activity' });
+  }
+});
+
+app.put('/api/activities/:id', async (req, res) => {
+  try {
+    const actId = req.params.id;
+    const { cost, participantCount, time, selected, name, category } = req.body;
+
+    await pool.query(
+      `UPDATE trip_activities
+       SET cost = COALESCE(?, cost),
+           participant_count = COALESCE(?, participant_count),
+           time = COALESCE(?, time),
+           selected = COALESCE(?, selected),
+           name = COALESCE(?, name),
+           category = COALESCE(?, category)
+       WHERE id = ?`,
+      [
+        cost !== undefined ? Number(cost) : null,
+        participantCount !== undefined ? Number(participantCount) : null,
+        time,
+        selected !== undefined ? (selected ? 1 : 0) : null,
+        name,
+        category,
+        actId,
+      ]
+    );
+
+    res.json({ id: actId, ...req.body });
+  } catch (error) {
+    console.error('Update activity error:', error);
+    res.status(500).json({ message: 'Failed to update activity' });
   }
 });
 

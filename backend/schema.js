@@ -104,6 +104,7 @@ export const initDatabaseSchema = async () => {
         name VARCHAR(200) NOT NULL,
         category VARCHAR(50) NOT NULL,
         cost DECIMAL(12,2) DEFAULT 0.00,
+        participant_count INT DEFAULT 1,
         time VARCHAR(10) DEFAULT '10:00',
         selected TINYINT(1) DEFAULT 1,
         is_custom TINYINT(1) DEFAULT 0,

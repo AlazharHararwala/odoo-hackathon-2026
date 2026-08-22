@@ -282,20 +282,44 @@ const SortableCityStop = ({
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3 shrink-0">
+                <div className="flex items-center space-x-2.5 shrink-0">
+                  {/* Person / Participant Counter */}
+                  <div className="flex items-center space-x-1 bg-slate-100 px-2 py-1 rounded-xl border border-slate-200" title="Number of people doing this activity">
+                    <Users className="w-3.5 h-3.5 text-slate-500 mr-0.5" />
+                    <button
+                      type="button"
+                      onClick={() => onUpdateActivityParticipants && onUpdateActivityParticipants(stop.id, act.id, (act.participantCount || 1) - 1)}
+                      disabled={(act.participantCount || 1) <= 1}
+                      className="w-5 h-5 rounded bg-white hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center disabled:opacity-30 cursor-pointer shadow-2xs"
+                    >
+                      -
+                    </button>
+                    <span className="w-5 text-center text-xs font-black text-slate-900">{act.participantCount || 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => onUpdateActivityParticipants && onUpdateActivityParticipants(stop.id, act.id, (act.participantCount || 1) + 1)}
+                      className="w-5 h-5 rounded bg-white hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center cursor-pointer shadow-2xs"
+                    >
+                      +
+                    </button>
+                  </div>
+
                   {act.cost === 0 ? (
-                    <span className="font-black text-xs text-white bg-emerald-600 px-4 py-1.5 rounded-xl shadow-xs tracking-wide uppercase">
+                    <span className="font-black text-xs text-white bg-emerald-600 px-3.5 py-1.5 rounded-xl shadow-xs tracking-wide uppercase">
                       {t('free', 'Free')}
                     </span>
                   ) : (
-                    <span className="font-black text-sm text-white bg-slate-900 px-4 py-1.5 rounded-xl shadow-xs flex items-center">
-                      {formatPrice(act.cost)}
+                    <span className="font-black text-sm text-white bg-slate-900 px-3 py-1.5 rounded-xl shadow-xs flex items-center space-x-1" title={`${formatPrice(act.cost)} x ${act.participantCount || 1} persons`}>
+                      <span>{formatPrice((act.cost || 0) * (act.participantCount || 1))}</span>
+                      {(act.participantCount || 1) > 1 && (
+                        <span className="text-[10px] text-teal-300 font-bold ml-1">({act.participantCount}p)</span>
+                      )}
                     </span>
                   )}
 
                   <button
                     onClick={() => onDeleteActivity(stop.id, act.id)}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-rose-600 rounded-xl transition-all"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-rose-600 rounded-xl transition-all cursor-pointer"
                     title="Remove Activity"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -513,6 +537,33 @@ const ItineraryBuilder = () => {
       } catch (err) {
         console.error('Failed to update stop cost:', err);
       }
+    }
+  };
+
+  // Handle Updating Participant Count per Activity
+  const handleUpdateActivityParticipants = async (stopId, actId, newCount) => {
+    const count = Math.max(1, parseInt(newCount) || 1);
+    setTrip((prev) => {
+      if (!prev || !prev.stops) return prev;
+      const updatedStops = prev.stops.map((s) => {
+        if (s.id === stopId) {
+          const updatedActs = (s.activities || []).map((a) => {
+            if (a.id === actId) {
+              return { ...a, participantCount: count };
+            }
+            return a;
+          });
+          return { ...s, activities: updatedActs };
+        }
+        return s;
+      });
+      return { ...prev, stops: updatedStops };
+    });
+
+    try {
+      await updateTripActivity(trip.id, actId, { participantCount: count });
+    } catch (err) {
+      console.error('Failed to update activity participant count:', err);
     }
   };
 
@@ -773,6 +824,7 @@ const ItineraryBuilder = () => {
                     onOpenActivityModal={(s) => setActiveStopForActivity(s)}
                     onDeleteActivity={handleDeleteActivity}
                     onUpdateStopCost={handleUpdateStopCost}
+                    onUpdateActivityParticipants={handleUpdateActivityParticipants}
                     isOverBudget={isOverBudget}
                   />
                 ))}
@@ -789,6 +841,7 @@ const ItineraryBuilder = () => {
           onClose={() => setActiveStopForActivity(null)}
           cityId={activeStopForActivity.cityId}
           cityName={activeStopForActivity.cityName}
+          existingActivities={activeStopForActivity.activities || []}
           onAddActivity={handleAddActivityToStop}
         />
       )}

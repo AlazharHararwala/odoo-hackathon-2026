@@ -420,10 +420,10 @@ const CreateTrip = () => {
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Plan a New Trip</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Build your personalized multi-city travel itinerary step by step</p>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Craft Your Dream Journey ✈️</h1>
+            <p className="text-xs text-slate-500 mt-0.5">Let's build your personalized multi-city itinerary step by step</p>
           </div>
-          <span className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full w-max">
+          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3.5 py-1 rounded-full w-max border border-emerald-200">
             Step {step} of 4
           </span>
         </div>
@@ -431,10 +431,10 @@ const CreateTrip = () => {
         {/* Step Indicator Bar */}
         <div className="grid grid-cols-4 gap-2 relative">
           {[
-            { num: 1, title: '1 Details' },
-            { num: 2, title: '2 Destinations' },
-            { num: 3, title: '3 Activities' },
-            { num: 4, title: '4 Review' },
+            { num: 1, title: '1. Dates & Group ✈️' },
+            { num: 2, title: '2. Route & Cities 🗺️' },
+            { num: 3, title: '3. Experiences 🎭' },
+            { num: 4, title: '4. Final Review 🚀' },
           ].map((s) => (
             <div
               key={s.num}

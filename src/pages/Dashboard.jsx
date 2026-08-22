@@ -113,26 +113,26 @@ const Dashboard = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Welcome Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-emerald-950/40 to-slate-900 p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-emerald-500/20">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 space-y-2 max-w-xl">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-300 text-xs font-semibold border border-primary-500/30">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30 backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
             <span>{getTimeBasedGreeting(user?.name)}</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">
-            Ready to plan your next great adventure?
+            Where is your heart taking you next?
           </h1>
           <p className="text-sm text-slate-300">
-            You have {trips.length} active trips planned across {trips.reduce((acc, t) => acc + (t.stops?.length || 0), 0)} destination stops.
+            Crafting memories across {trips.length} active trip{trips.length !== 1 ? 's' : ''} and {trips.reduce((acc, t) => acc + (t.stops?.length || 0), 0)} destination stops.
           </p>
         </div>
 
         <div className="relative z-10 flex flex-wrap gap-3">
           <button
             onClick={() => navigate('/create-trip')}
-            className="px-5 py-3 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-xs font-bold shadow-lg shadow-primary-900/30 flex items-center space-x-2 transition-all hover:scale-105"
+            className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 text-white rounded-2xl text-xs font-bold shadow-lg shadow-emerald-900/30 flex items-center space-x-2 transition-all hover:scale-105"
           >
             <Plus className="w-4 h-4" />
             <span>{t('planNewTrip', 'Plan New Trip')}</span>
@@ -140,47 +140,83 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Daily Travel Inspiration Quote & Vibe Selector */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-emerald-500/10 border border-amber-200/60 rounded-3xl p-5 flex items-center space-x-4 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0 shadow-sm">
+            <Sparkles className="w-6 h-6 text-amber-500" />
+          </div>
+          <div className="text-xs text-slate-700 space-y-1">
+            <p className="font-bold italic text-slate-800 text-sm">
+              "The world is a book and those who do not travel read only one page."
+            </p>
+            <p className="text-[11px] text-slate-500 font-semibold">— Saint Augustine • Travel Inspiration of the Day</p>
+          </div>
+        </div>
+
+        {/* Travel Vibe Selector Badge */}
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+              <span>✨ Your Travel Vibe Today</span>
+            </span>
+            <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Active</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <span className="px-2.5 py-1 rounded-xl bg-emerald-100/70 text-emerald-800 text-[11px] font-bold cursor-pointer hover:bg-emerald-200 transition-colors">
+              🌴 Chill & Relax
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-sky-100/70 text-sky-800 text-[11px] font-bold cursor-pointer hover:bg-sky-200 transition-colors">
+              🏛️ Culture Walk
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-amber-100/70 text-amber-800 text-[11px] font-bold cursor-pointer hover:bg-amber-200 transition-colors">
+              🍜 Foodie Explorer
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Stats & Financial Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-emerald-300 transition-all flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-medium text-slate-500">Total Planned Spending</span>
-            <h3 className="text-xl font-bold text-slate-900 mt-0.5">{formatPrice(totalPlannedSpending)}</h3>
+            <span className="text-xs font-semibold text-slate-500">Planned Budget 💰</span>
+            <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">{formatPrice(totalPlannedSpending)}</h3>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-sky-300 transition-all flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 shadow-sm">
             <PieChart className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-medium text-slate-500">Average Spend / Day</span>
-            <h3 className="text-xl font-bold text-slate-900 mt-0.5">{formatPrice(avgPerDay)}</h3>
+            <span className="text-xs font-semibold text-slate-500">Daily Travel Pace 🧭</span>
+            <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">{formatPrice(avgPerDay)}</h3>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-amber-300 transition-all flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-sm">
             <Calendar className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-medium text-slate-500">Next Upcoming Trip</span>
-            <h3 className="text-sm font-bold text-slate-900 mt-0.5 line-clamp-1">
-              {upcomingTrip ? upcomingTrip.name : 'None Scheduled'}
+            <span className="text-xs font-semibold text-slate-500">Next Horizon 🌅</span>
+            <h3 className="text-sm font-extrabold text-slate-900 mt-0.5 line-clamp-1">
+              {upcomingTrip ? upcomingTrip.name : 'Ready for your next trip'}
             </h3>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-purple-300 transition-all flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 shadow-sm">
             <MapPin className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-medium text-slate-500">Total Cities Planned</span>
-            <h3 className="text-xl font-bold text-slate-900 mt-0.5">
+            <span className="text-xs font-semibold text-slate-500">Saved Destinations 🗺️</span>
+            <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">
               {trips.reduce((acc, t) => acc + (t.stops?.length || 0), 0)} Cities
             </h3>
           </div>
@@ -191,46 +227,46 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <button
           onClick={() => navigate('/create-trip')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all text-left group"
+          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-emerald-500 hover:shadow-md transition-all text-left group"
         >
-          <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-            <Plus className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-2xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+            <Plus className="w-6 h-6" />
           </div>
-          <h4 className="font-bold text-sm text-slate-900">Plan New Trip</h4>
-          <p className="text-xs text-slate-500 mt-0.5">Multi-step wizard</p>
+          <h4 className="font-extrabold text-sm text-slate-900">Build New Trip</h4>
+          <p className="text-xs text-slate-500 mt-0.5">Step-by-step route wizard</p>
         </button>
 
         <button
           onClick={() => navigate('/explore')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all text-left group"
+          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-teal-500 hover:shadow-md transition-all text-left group"
         >
-          <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-            <Compass className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-2xl bg-teal-100/70 text-teal-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+            <Compass className="w-6 h-6" />
           </div>
-          <h4 className="font-bold text-sm text-slate-900">Explore Cities</h4>
-          <p className="text-xs text-slate-500 mt-0.5">Discover destinations</p>
+          <h4 className="font-extrabold text-sm text-slate-900">Explore 900+ Cities</h4>
+          <p className="text-xs text-slate-500 mt-0.5">High-res photos & activities</p>
         </button>
 
         <button
           onClick={() => navigate('/timeline')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-amber-500 hover:shadow-md transition-all text-left group"
+          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-amber-500 hover:shadow-md transition-all text-left group"
         >
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-            <Calendar className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-2xl bg-amber-100/70 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+            <Calendar className="w-6 h-6" />
           </div>
-          <h4 className="font-bold text-sm text-slate-900">Trip Calendar</h4>
-          <p className="text-xs text-slate-500 mt-0.5">Visual timeline view</p>
+          <h4 className="font-extrabold text-sm text-slate-900">Visual Timeline</h4>
+          <p className="text-xs text-slate-500 mt-0.5">Calendar & route map</p>
         </button>
 
         <button
           onClick={() => navigate('/budget')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all text-left group"
+          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-indigo-500 hover:shadow-md transition-all text-left group"
         >
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-            <PieChart className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-2xl bg-indigo-100/70 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+            <PieChart className="w-6 h-6" />
           </div>
-          <h4 className="font-bold text-sm text-slate-900">Budget Analytics</h4>
-          <p className="text-xs text-slate-500 mt-0.5">Recharts insights</p>
+          <h4 className="font-extrabold text-sm text-slate-900">Wallet & Budget</h4>
+          <p className="text-xs text-slate-500 mt-0.5">Interactive cost breakdown</p>
         </button>
       </div>
 
@@ -254,19 +290,21 @@ const Dashboard = () => {
             ))}
           </div>
         ) : trips.length === 0 ? (
-          <div className="bg-white border border-dashed border-slate-300 rounded-3xl p-12 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mx-auto">
-              <Compass className="w-8 h-8" />
+          <div className="bg-gradient-to-b from-emerald-50/60 to-teal-50/30 border border-emerald-200/80 rounded-3xl p-10 md:p-12 text-center space-y-4 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
+              <Compass className="w-8 h-8 animate-spin-slow" />
             </div>
-            <div className="max-w-sm mx-auto space-y-1">
-              <h3 className="text-base font-bold text-slate-800">No trips planned yet</h3>
-              <p className="text-xs text-slate-500">Create your first multi-city adventure and build an unforgettable itinerary.</p>
+            <div className="max-w-md mx-auto space-y-1.5">
+              <h3 className="text-lg font-extrabold text-slate-800">Your canvas is blank — let's paint a journey ✈️</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                No active trips planned yet. Pick your dream destinations and let GlobeTrotter structure your dates, routes, and custom activities.
+              </p>
             </div>
             <button
               onClick={() => navigate('/create-trip')}
-              className="px-5 py-2.5 bg-primary-600 text-white text-xs font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-sm"
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold rounded-2xl transition-all shadow-md hover:scale-105"
             >
-              + Create First Trip
+              ✨ Plan Your First Trip
             </button>
           </div>
         ) : (

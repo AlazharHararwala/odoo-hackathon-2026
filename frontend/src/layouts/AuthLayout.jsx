@@ -19,12 +19,15 @@ const AuthLayout = () => {
         {/* Logo Header */}
         <div className="relative z-10">
           <Link to="/" className="inline-flex items-center space-x-3 group">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary-600 to-teal-400 flex items-center justify-center shadow-xl shadow-primary-950/50">
-              <Globe className="w-7 h-7 text-white" />
+            <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 p-0.5 shadow-xl shadow-emerald-500/30 group-hover:scale-105 transition-all duration-300">
+              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 via-transparent to-cyan-400/20" />
+                <Compass className="w-6 h-6 text-emerald-400 group-hover:rotate-45 transition-transform duration-500 relative z-10" />
+              </div>
             </div>
             <div>
-              <span className="text-2xl font-black text-white tracking-tight">GlobeTrotter</span>
-              <span className="block text-xs uppercase tracking-widest text-primary-400 font-semibold">Multi-City Travel Planner</span>
+              <span className="text-2xl font-extrabold text-white tracking-tight">GlobeTrotter</span>
+              <span className="block text-xs uppercase tracking-widest text-emerald-400 font-extrabold">Multi-City Travel Planner</span>
             </div>
           </Link>
         </div>

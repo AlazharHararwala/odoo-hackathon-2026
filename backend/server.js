@@ -96,6 +96,9 @@ const getFullTripDetails = async (tripId) => {
     coverImage: trip.cover_image,
     targetBudget: Number(trip.target_budget),
     estimatedBudget: calculatedEst > 0 ? calculatedEst : Number(trip.estimated_budget),
+    adultsCount: Number(trip.adults_count || 1),
+    childrenCount: Number(trip.children_count || 0),
+    travelersCount: Number(trip.travelers_count || 1),
     shareId: trip.share_id,
     isPublic: Boolean(trip.is_public),
     createdUser: trip.created_user,
@@ -232,8 +235,8 @@ app.post('/api/trips', async (req, res) => {
     const shareId = `sh_${Math.random().toString(36).substring(2, 9)}`;
 
     await pool.query(
-      `INSERT INTO trips (id, user_id, name, description, start_date, end_date, total_days, status, cover_image, target_budget, estimated_budget, share_id, is_public, created_user)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO trips (id, user_id, name, description, start_date, end_date, total_days, status, cover_image, target_budget, estimated_budget, adults_count, children_count, travelers_count, share_id, is_public, created_user)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tripId,
         req.user?.id || null,
@@ -246,6 +249,9 @@ app.post('/api/trips', async (req, res) => {
         tripData.coverImage || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
         Number(tripData.targetBudget) || 50000,
         Number(tripData.estimatedBudget) || 0,
+        Number(tripData.adultsCount || tripData.adults) || 1,
+        Number(tripData.childrenCount || tripData.children) || 0,
+        Number(tripData.travelersCount || tripData.travelers || (Number(tripData.adultsCount || 1) + Number(tripData.childrenCount || 0))),
         shareId,
         tripData.isPublic !== undefined ? (tripData.isPublic ? 1 : 0) : 1,
         tripData.createdUser || 'Traveler',
@@ -325,7 +331,10 @@ app.put('/api/trips/:id', async (req, res) => {
            total_days = COALESCE(?, total_days),
            status = COALESCE(?, status),
            target_budget = COALESCE(?, target_budget),
-           estimated_budget = COALESCE(?, estimated_budget)
+           estimated_budget = COALESCE(?, estimated_budget),
+           adults_count = COALESCE(?, adults_count),
+           children_count = COALESCE(?, children_count),
+           travelers_count = COALESCE(?, travelers_count)
        WHERE id = ?`,
       [
         tripData.name,
@@ -336,6 +345,9 @@ app.put('/api/trips/:id', async (req, res) => {
         tripData.status,
         tripData.targetBudget,
         tripData.estimatedBudget,
+        tripData.adultsCount || tripData.adults,
+        tripData.childrenCount || tripData.children,
+        tripData.travelersCount || tripData.travelers,
         tripId,
       ]
     );

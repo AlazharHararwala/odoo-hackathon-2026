@@ -109,54 +109,6 @@ const CITY_PHOTOS = [
       }
       console.log(`✅ Seeded ${totalDest} destinations and ${totalAct} activities into MySQL.`);
     }
-
-    // 3. Seed Initial Trips if none exist
-    const [tripRows] = await pool.query('SELECT COUNT(*) as count FROM trips');
-    if (tripRows[0].count === 0) {
-      console.log('🌱 Seeding initial trips into MySQL...');
-      const tripId = 'trip_101';
-      await pool.query(
-        `INSERT INTO trips (id, user_id, name, description, start_date, end_date, total_days, status, cover_image, target_budget, estimated_budget, share_id, is_public, created_user)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          tripId,
-          '101',
-          'European Dream Tour',
-          'Exploring Paris, Zurich & Rome',
-          '2026-10-01',
-          '2026-10-10',
-          10,
-          'Planning',
-          'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80',
-          80000.00,
-          65000.00,
-          'euro_tour_2026',
-          1,
-          'Alazhar',
-        ]
-      );
-
-      // Seed Stop for Paris
-      const stopId = 'stop_101_paris';
-      await pool.query(
-        `INSERT INTO trip_stops (id, trip_id, city_id, city_name, country, stop_order, accommodation_cost, transport_cost)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [stopId, tripId, 'c_france_0', 'Paris', 'France', 1, 15000.00, 3000.00]
-      );
-
-      // Seed Trip Activities for Paris
-      await pool.query(
-        `INSERT INTO trip_activities (id, trip_id, stop_id, activity_id, name, category, cost, time, selected, is_custom)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ['tact_1', tripId, stopId, 'act_c_france_0_0', 'Eiffel Tower Summit Access', 'Sightseeing', 4500.00, '09:30', 1, 0]
-      );
-      await pool.query(
-        `INSERT INTO trip_activities (id, trip_id, stop_id, activity_id, name, category, cost, time, selected, is_custom)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ['tact_2', tripId, stopId, 'act_c_france_0_1', 'Louvre Museum Timed Entry', 'Culture', 2800.00, '14:00', 1, 0]
-      );
-      console.log('✅ Seeded demo trip into MySQL.');
-    }
   } catch (error) {
     console.error('❌ Error seeding database data:', error);
   }

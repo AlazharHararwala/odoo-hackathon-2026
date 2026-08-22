@@ -53,11 +53,19 @@ const getStoredTrips = () => {
     localStorage.setItem('globetrotter_trips', JSON.stringify(MOCK_TRIPS));
   }
 
-  // Auto-update statuses based on current date
-  const updatedTrips = trips.map((trip) => ({
-    ...trip,
-    status: calculateTripStatus(trip.startDate, trip.endDate, trip.status),
-  }));
+  // Auto-update statuses & compute estimated budget for stored trips
+  const updatedTrips = trips.map((trip) => {
+    let calculatedEst = (trip.stops || []).reduce((acc, stop) => {
+      const actSum = (stop.activities || []).reduce((aSum, a) => aSum + (a.cost || 0), 0);
+      return acc + actSum + (stop.accommodationCost || 0) + (stop.transportCost || 0);
+    }, 0);
+
+    return {
+      ...trip,
+      estimatedBudget: calculatedEst > 0 ? calculatedEst : (trip.estimatedBudget || 45000),
+      status: calculateTripStatus(trip.startDate, trip.endDate, trip.status),
+    };
+  });
 
   return updatedTrips;
 };

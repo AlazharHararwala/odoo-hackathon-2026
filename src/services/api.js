@@ -1,0 +1,565 @@
+import axios from 'axios';
+import { MOCK_TRIPS, MOCK_CITIES, MOCK_ACTIVITIES, INITIAL_USER } from '../data/mockData';
+
+// Toggle between Mock Mode and Real Flask REST API Backend
+const USE_MOCK = true;
+const API_BASE_URL = 'http://localhost:5000/api';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Intercept request to attach JWT Auth token
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('globetrotter_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Helper function to calculate automatic trip status based on current date vs duration
+export const calculateTripStatus = (startDateStr, endDateStr, manualStatus = 'Planning') => {
+  if (!startDateStr || !endDateStr) return manualStatus;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const start = new Date(startDateStr);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(endDateStr);
+  end.setHours(23, 59, 59, 999);
+
+  if (today > end) {
+    return 'Completed';
+  }
+  if (today >= start && today <= end) {
+    return 'In Progress';
+  }
+  return manualStatus || 'Planning';
+};
+
+// Local Storage Helper for Mock Data persistence
+const getStoredTrips = () => {
+  const data = localStorage.getItem('globetrotter_trips');
+  let trips = MOCK_TRIPS;
+  if (data) {
+    try { trips = JSON.parse(data); } catch (e) { console.error(e); }
+  } else {
+    localStorage.setItem('globetrotter_trips', JSON.stringify(MOCK_TRIPS));
+  }
+
+  // Auto-update statuses based on current date
+  const updatedTrips = trips.map((trip) => ({
+    ...trip,
+    status: calculateTripStatus(trip.startDate, trip.endDate, trip.status),
+  }));
+
+  return updatedTrips;
+};
+
+const saveStoredTrips = (trips) => {
+  localStorage.setItem('globetrotter_trips', JSON.stringify(trips));
+};
+
+const delay = (ms = 250) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// =================== AUTHENTICATION SERVICES ===================
+
+export const login = async (credentials) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.post('/auth/login', credentials);
+    return response.data;
+  }
+  await delay();
+  if (credentials.email && credentials.password) {
+    const mockToken = 'mock_jwt_token_globetrotter_12345';
+    localStorage.setItem('globetrotter_token', mockToken);
+    return { token: mockToken, user: INITIAL_USER };
+  }
+  throw new Error('Invalid email or password credentials');
+};
+
+export const signup = async (userData) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.post('/auth/register', userData);
+    return response.data;
+  }
+  await delay();
+  const newUser = {
+    ...INITIAL_USER,
+    id: `usr_${Date.now()}`,
+    name: userData.fullName || userData.name || 'New Traveler',
+    email: userData.email,
+  };
+  const mockToken = `mock_jwt_token_${Date.now()}`;
+  localStorage.setItem('globetrotter_token', mockToken);
+  return { token: mockToken, user: newUser };
+};
+
+export const getCurrentUser = async () => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get('/auth/me');
+    return response.data;
+  }
+  await delay(150);
+  const token = localStorage.getItem('globetrotter_token');
+  if (!token) return null;
+  return INITIAL_USER;
+};
+
+// =================== TRIPS SERVICES ===================
+
+export const getTrips = async (params = {}) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get('/trips', { params });
+    return response.data.map((t) => ({
+      ...t,
+      status: calculateTripStatus(t.startDate, t.endDate, t.status),
+    }));
+  }
+  await delay();
+  let trips = getStoredTrips();
+  if (params.search) {
+    const query = params.search.toLowerCase();
+    trips = trips.filter((t) => t.name.toLowerCase().includes(query) || t.description.toLowerCase().includes(query));
+  }
+  if (params.status && params.status !== 'All') {
+    trips = trips.filter((t) => t.status === params.status);
+  }
+  return trips;
+};
+
+export const getTrip = async (tripId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get(`/trips/${tripId}`);
+    const trip = response.data;
+    return {
+      ...trip,
+      status: calculateTripStatus(trip.startDate, trip.endDate, trip.status),
+    };
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const trip = trips.find((t) => t.id === tripId);
+  if (!trip) throw new Error(`Trip with ID ${tripId} not found`);
+  return {
+    ...trip,
+    status: calculateTripStatus(trip.startDate, trip.endDate, trip.status),
+  };
+};
+
+export const createTrip = async (tripData) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.post('/trips', tripData);
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const calculatedStatus = calculateTripStatus(tripData.startDate, tripData.endDate, 'Planning');
+  const newTrip = {
+    id: `trip_${Date.now()}`,
+    name: tripData.name || 'New Adventure',
+    description: tripData.description || '',
+    startDate: tripData.startDate || '2026-10-01',
+    endDate: tripData.endDate || '2026-10-07',
+    totalDays: tripData.totalDays || 7,
+    status: calculatedStatus,
+    coverImage: tripData.coverImage || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
+    targetBudget: Number(tripData.targetBudget) || 50000,
+    estimatedBudget: 0,
+    shareId: `sh_${Math.random().toString(36).substring(2, 9)}`,
+    isPublic: true,
+    createdUser: INITIAL_USER.name,
+    stops: tripData.stops || [],
+  };
+  trips.unshift(newTrip);
+  saveStoredTrips(trips);
+  return newTrip;
+};
+
+export const updateTrip = async (tripId, tripData) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.put(`/trips/${tripId}`, tripData);
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const index = trips.findIndex((t) => t.id === tripId);
+  if (index === -1) throw new Error('Trip not found');
+  
+  trips[index] = { 
+    ...trips[index], 
+    ...tripData,
+    status: calculateTripStatus(
+      tripData.startDate || trips[index].startDate,
+      tripData.endDate || trips[index].endDate,
+      tripData.status || trips[index].status
+    ),
+  };
+  saveStoredTrips(trips);
+  return trips[index];
+};
+
+export const deleteTrip = async (tripId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.delete(`/trips/${tripId}`);
+    return response.data;
+  }
+  await delay();
+  let trips = getStoredTrips();
+  trips = trips.filter((t) => t.id !== tripId);
+  saveStoredTrips(trips);
+  return { success: true, message: 'Trip deleted successfully' };
+};
+
+// =================== CITIES SERVICES ===================
+
+export const getCities = async (params = {}) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get('/cities', { params });
+    return response.data;
+  }
+  await delay();
+  let cities = [...MOCK_CITIES];
+  if (params.search) {
+    const q = params.search.toLowerCase();
+    cities = cities.filter(c => c.name.toLowerCase().includes(q) || c.country.toLowerCase().includes(q));
+  }
+  if (params.region && params.region !== 'All') {
+    cities = cities.filter(c => c.region === params.region);
+  }
+  if (params.costIndex && params.costIndex !== 'All') {
+    cities = cities.filter(c => c.costIndex === params.costIndex);
+  }
+  return cities;
+};
+
+export const getCity = async (cityId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get(`/cities/${cityId}`);
+    return response.data;
+  }
+  await delay();
+  const city = MOCK_CITIES.find(c => c.id === cityId);
+  if (!city) throw new Error('City not found');
+  return city;
+};
+
+// =================== STOPS SERVICES ===================
+
+export const addTripStop = async (tripId, stopData) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.post(`/trips/${tripId}/stops`, stopData);
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const trip = trips.find(t => t.id === tripId);
+  if (!trip) throw new Error('Trip not found');
+
+  const targetCity = MOCK_CITIES.find(c => c.id === stopData.cityId) || { name: stopData.cityName || 'Destination', country: '' };
+
+  const newStop = {
+    id: `stop_${Date.now()}`,
+    cityId: stopData.cityId,
+    cityName: targetCity.name,
+    country: targetCity.country,
+    startDate: stopData.startDate || trip.startDate,
+    endDate: stopData.endDate || trip.endDate,
+    order: (trip.stops ? trip.stops.length : 0) + 1,
+    accommodationCost: Number(stopData.accommodationCost) || 5000,
+    transportCost: Number(stopData.transportCost) || 2000,
+    activities: [],
+  };
+
+  trip.stops = trip.stops || [];
+  trip.stops.push(newStop);
+  saveStoredTrips(trips);
+  return newStop;
+};
+
+export const updateTripStop = async (stopId, stopData) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.put(`/stops/${stopId}`, stopData);
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  for (const trip of trips) {
+    const stopIndex = trip.stops?.findIndex(s => s.id === stopId);
+    if (stopIndex !== undefined && stopIndex !== -1) {
+      trip.stops[stopIndex] = { ...trip.stops[stopIndex], ...stopData };
+      saveStoredTrips(trips);
+      return trip.stops[stopIndex];
+    }
+  }
+  throw new Error('Stop not found');
+};
+
+export const deleteTripStop = async (tripId, stopId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.delete(`/stops/${stopId}`);
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const trip = trips.find(t => t.id === tripId);
+  if (trip && trip.stops) {
+    trip.stops = trip.stops.filter(s => s.id !== stopId);
+    saveStoredTrips(trips);
+    return { success: true };
+  }
+  throw new Error('Trip or stop not found');
+};
+
+// =================== ACTIVITIES SERVICES ===================
+
+export const getActivities = async (params = {}) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get('/activities', { params });
+    return response.data;
+  }
+  await delay();
+  let activities = [...MOCK_ACTIVITIES];
+  if (params.cityId) {
+    activities = activities.filter(a => a.cityId === params.cityId);
+  }
+  if (params.category && params.category !== 'All') {
+    activities = activities.filter(a => a.category === params.category);
+  }
+  if (params.search) {
+    const q = params.search.toLowerCase();
+    activities = activities.filter(a => a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q));
+  }
+  if (params.maxCost) {
+    activities = activities.filter(a => a.cost <= Number(params.maxCost));
+  }
+  return activities;
+};
+
+export const addTripActivity = async (tripId, stopId, activityData) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.post(`/trips/${tripId}/activities`, { stopId, ...activityData });
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const trip = trips.find(t => t.id === tripId);
+  if (!trip) throw new Error('Trip not found');
+
+  const stop = trip.stops?.find(s => s.id === stopId);
+  if (!stop) throw new Error('Stop not found');
+
+  const newActivity = {
+    id: `tac_${Date.now()}`,
+    activityId: activityData.activityId || `act_custom_${Date.now()}`,
+    name: activityData.name,
+    time: activityData.time || '10:00',
+    cost: Number(activityData.cost) || 0,
+    category: activityData.category || 'Sightseeing',
+    dayIndex: activityData.dayIndex || 1,
+  };
+
+  stop.activities = stop.activities || [];
+  stop.activities.push(newActivity);
+  
+  // Recalculate estimated trip budget
+  let totalCost = 0;
+  trip.stops.forEach(s => {
+    totalCost += (s.accommodationCost || 0) + (s.transportCost || 0);
+    s.activities?.forEach(act => { totalCost += (act.cost || 0); });
+  });
+  trip.estimatedBudget = totalCost;
+
+  saveStoredTrips(trips);
+  return newActivity;
+};
+
+export const updateTripActivity = async (tripId, activityId, activityData) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.put(`/trip-activities/${activityId}`, activityData);
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const trip = trips.find(t => t.id === tripId);
+  if (trip) {
+    for (const stop of trip.stops || []) {
+      const actIndex = stop.activities?.findIndex(a => a.id === activityId);
+      if (actIndex !== undefined && actIndex !== -1) {
+        stop.activities[actIndex] = { ...stop.activities[actIndex], ...activityData };
+        saveStoredTrips(trips);
+        return stop.activities[actIndex];
+      }
+    }
+  }
+  throw new Error('Activity not found');
+};
+
+export const deleteTripActivity = async (tripId, activityId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.delete(`/trip-activities/${activityId}`);
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const trip = trips.find(t => t.id === tripId);
+  if (trip) {
+    for (const stop of trip.stops || []) {
+      if (stop.activities) {
+        stop.activities = stop.activities.filter(a => a.id !== activityId);
+      }
+    }
+    saveStoredTrips(trips);
+    return { success: true };
+  }
+  throw new Error('Trip not found');
+};
+
+// =================== BUDGET & TIMELINE SERVICES ===================
+
+export const getTripBudget = async (tripId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get(`/trips/${tripId}/budget`);
+    return response.data;
+  }
+  await delay();
+  const trip = await getTrip(tripId);
+  
+  let transport = 0;
+  let accommodation = 0;
+  let activitiesCost = 0;
+  let meals = 0;
+  
+  const cityBreakdown = [];
+
+  trip.stops?.forEach(stop => {
+    const stopTransport = stop.transportCost || 0;
+    const stopAccom = stop.accommodationCost || 0;
+    let stopActivities = 0;
+    let stopMeals = 0;
+
+    stop.activities?.forEach(act => {
+      if (act.category === 'Food') {
+        meals += act.cost || 0;
+        stopMeals += act.cost || 0;
+      } else {
+        activitiesCost += act.cost || 0;
+        stopActivities += act.cost || 0;
+      }
+    });
+
+    transport += stopTransport;
+    accommodation += stopAccom;
+
+    cityBreakdown.push({
+      city: stop.cityName,
+      transport: stopTransport,
+      accommodation: stopAccom,
+      activities: stopActivities,
+      meals: stopMeals,
+      total: stopTransport + stopAccom + stopActivities + stopMeals,
+    });
+  });
+
+  const total = transport + accommodation + activitiesCost + meals;
+  const avgPerDay = trip.totalDays > 0 ? Math.round(total / trip.totalDays) : total;
+
+  return {
+    total,
+    targetBudget: trip.targetBudget || 50000,
+    avgPerDay,
+    remaining: (trip.targetBudget || 50000) - total,
+    isOverBudget: total > (trip.targetBudget || 50000),
+    breakdown: [
+      { name: 'Transport', cost: transport, color: '#0d9488' },
+      { name: 'Accommodation', cost: accommodation, color: '#0284c7' },
+      { name: 'Activities', cost: activitiesCost, color: '#f59e0b' },
+      { name: 'Meals', cost: meals, color: '#ea580c' },
+    ],
+    cityBreakdown,
+  };
+};
+
+export const getTripTimeline = async (tripId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get(`/trips/${tripId}/timeline`);
+    return response.data;
+  }
+  await delay();
+  const trip = await getTrip(tripId);
+  
+  // Format timeline events chronologically
+  const timelineDays = [];
+  let currentDay = 1;
+
+  trip.stops?.forEach((stop) => {
+    timelineDays.push({
+      dayNumber: currentDay,
+      date: stop.startDate,
+      cityName: stop.cityName,
+      country: stop.country,
+      stopId: stop.id,
+      events: stop.activities || [],
+    });
+    currentDay += 1;
+  });
+
+  return { tripId: trip.id, tripName: trip.name, timelineDays };
+};
+
+// =================== PUBLIC SHARE & COPY SERVICES ===================
+
+export const createShareLink = async (tripId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.post(`/trips/${tripId}/share`);
+    return response.data;
+  }
+  await delay();
+  const trip = await getTrip(tripId);
+  const shareId = trip.shareId || `sh_${Math.random().toString(36).substring(2, 9)}`;
+  await updateTrip(tripId, { isPublic: true, shareId });
+  const shareUrl = `${window.location.origin}/shared/${shareId}`;
+  return { shareId, shareUrl };
+};
+
+export const getSharedTrip = async (shareId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.get(`/shared/${shareId}`);
+    return response.data;
+  }
+  await delay();
+  const trips = getStoredTrips();
+  const trip = trips.find(t => t.shareId === shareId || t.id === shareId);
+  if (!trip) throw new Error('Shared trip not found or link has expired');
+  return {
+    ...trip,
+    status: calculateTripStatus(trip.startDate, trip.endDate, trip.status),
+  };
+};
+
+export const copySharedTrip = async (shareId) => {
+  if (!USE_MOCK) {
+    const response = await apiClient.post(`/shared/${shareId}/copy`);
+    return response.data;
+  }
+  await delay();
+  const sourceTrip = await getSharedTrip(shareId);
+  const clonedTrip = {
+    ...sourceTrip,
+    id: `trip_${Date.now()}`,
+    name: `${sourceTrip.name} (Copy)`,
+    shareId: `sh_${Math.random().toString(36).substring(2, 9)}`,
+    createdUser: INITIAL_USER.name,
+    status: 'Planning',
+  };
+  const trips = getStoredTrips();
+  trips.unshift(clonedTrip);
+  saveStoredTrips(trips);
+  return clonedTrip;
+};

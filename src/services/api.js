@@ -2,7 +2,7 @@ import axios from 'axios';
 import { MOCK_TRIPS, MOCK_CITIES, MOCK_ACTIVITIES, INITIAL_USER } from '../data/mockData';
 
 // Toggle between Mock Mode and Real Flask REST API Backend
-const USE_MOCK = true;
+const USE_MOCK = false;
 const API_BASE_URL = 'http://localhost:5000/api';
 
 const apiClient = axios.create({

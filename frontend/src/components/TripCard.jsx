@@ -17,6 +17,7 @@ import {
 import { createShareLink } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
+import { formatDateDisplay } from '../utils/dateUtils';
 
 const TripCard = ({ trip, onDelete, onDeleteClick, isCompact = false }) => {
   const navigate = useNavigate();
@@ -98,7 +99,7 @@ const TripCard = ({ trip, onDelete, onDeleteClick, isCompact = false }) => {
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold border-b border-slate-100 pb-2.5">
             <span className="flex items-center">
               <Calendar className="w-3.5 h-3.5 text-primary-600 mr-1.5" />
-              {trip.startDate} – {trip.endDate}
+              {formatDateDisplay(trip.startDate)} – {formatDateDisplay(trip.endDate)}
             </span>
             <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
               {trip.stops?.length || 0} Cities

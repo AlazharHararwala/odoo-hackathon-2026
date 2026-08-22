@@ -26,10 +26,10 @@ const ProfileSettings = () => {
   const [activeTab, setActiveTab] = useState('preferences');
 
   // Form State
-  const [name, setName] = useState(user?.name || 'Alex Morgan');
-  const [email, setEmail] = useState(user?.email || 'alex.morgan@example.com');
+  const [name, setName] = useState(user?.name || 'Alazhar');
+  const [email, setEmail] = useState(user?.email || 'az@gmail.com');
   const [bio, setBio] = useState(user?.bio || 'Avid traveler exploring one city at a time.');
-  const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
+  const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80');
 
   // Preferences Form State
   const [currency, setCurrency] = useState(activeCurr || 'USD ($)');

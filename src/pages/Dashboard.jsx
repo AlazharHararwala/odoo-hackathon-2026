@@ -98,6 +98,18 @@ const Dashboard = () => {
     );
   }
 
+  const getTimeBasedGreeting = (userName) => {
+    const hour = new Date().getHours();
+    const name = userName || 'Explorer';
+    if (hour >= 5 && hour < 12) {
+      return `Good morning, ${name}`;
+    } else if (hour >= 12 && hour < 17) {
+      return `Good afternoon, ${name}`;
+    } else {
+      return `Good evening, ${name}`;
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Welcome Banner */}
@@ -107,7 +119,7 @@ const Dashboard = () => {
         <div className="relative z-10 space-y-2 max-w-xl">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-300 text-xs font-semibold border border-primary-500/30">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Welcome back, {user?.name || 'Explorer'}</span>
+            <span>{getTimeBasedGreeting(user?.name)}</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">
             Ready to plan your next great adventure?

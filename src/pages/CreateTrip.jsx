@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { getCities, createTrip, getActivities } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { 
+  GLOBAL_CONTINENTS, 
+  COUNTRY_CONTINENT_MAP, 
+  COUNTRY_CITIES_CATALOG, 
+  getCitiesForCountryCatalog 
+} from '../data/globalCitiesDatabase';
+import { 
   Calendar, 
   MapPin, 
   IndianRupee, 
@@ -13,7 +19,12 @@ import {
   Sparkles, 
   Clock,
   Compass,
-  Star
+  Star,
+  Globe,
+  Filter,
+  Search,
+  RotateCcw,
+  Building2
 } from 'lucide-react';
 
 const SPOT_PHOTOS = [
@@ -46,12 +57,29 @@ const CreateTrip = () => {
     'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80'
   );
 
-  // Step 2: City Destinations
+  // Step 2: City Destinations & Global Filters
   const [allCities, setAllCities] = useState([]);
   const [selectedStops, setSelectedStops] = useState([]);
+  const [selectedContinent, setSelectedContinent] = useState('All');
+  const [selectedCountry, setSelectedCountry] = useState('All');
+  const [citySearchQuery, setCitySearchQuery] = useState('');
 
-  // Step 3: Specific City Activities Map
+  // Step 2 Add Custom City Modal State
+  const [showAddCityModal, setShowAddCityModal] = useState(false);
+  const [customCityName, setCustomCityName] = useState('');
+  const [customCountryName, setCustomCountryName] = useState('');
+  const [customContinent, setCustomContinent] = useState('Europe');
+  const [customCostIndex, setCustomCostIndex] = useState('Moderate');
+  const [customAttractionsText, setCustomAttractionsText] = useState('');
+
+  // Step 3: Specific City Activities Map & Add Custom Activity Modal State
   const [cityActivitiesMap, setCityActivitiesMap] = useState({});
+  const [showAddActivityModal, setShowAddActivityModal] = useState(false);
+  const [targetCityForActivity, setTargetCityForActivity] = useState(null);
+  const [customActivityName, setCustomActivityName] = useState('');
+  const [customActivityCategory, setCustomActivityCategory] = useState('Sightseeing');
+  const [customActivityCost, setCustomActivityCost] = useState(0);
+  const [customActivityTime, setCustomActivityTime] = useState('10:00');
 
   useEffect(() => {
     fetchCities();
@@ -78,6 +106,181 @@ const CreateTrip = () => {
     }
   };
 
+  // 15+ Countries per Continent Filter Options
+  const availableContinents = GLOBAL_CONTINENTS;
+
+  const availableCountries = Object.keys(COUNTRY_CONTINENT_MAP).filter((ctry) => {
+    if (selectedContinent === 'All') return true;
+    return COUNTRY_CONTINENT_MAP[ctry] === selectedContinent;
+  });
+
+  const handleContinentChange = (continent) => {
+    setSelectedContinent(continent);
+    if (continent !== 'All' && selectedCountry !== 'All') {
+      if (COUNTRY_CONTINENT_MAP[selectedCountry] !== continent) {
+        setSelectedCountry('All');
+      }
+    }
+  };
+
+  // Selecting a Country AUTOMATICALLY selects its Continent!
+  const handleCountryChange = (country) => {
+    setSelectedCountry(country);
+    if (country !== 'All') {
+      const mappedContinent = COUNTRY_CONTINENT_MAP[country];
+      if (mappedContinent) {
+        setSelectedContinent(mappedContinent);
+      }
+    }
+  };
+
+  // Generate & Filter 20 Cities per Country selected
+  const getFilteredCities = () => {
+    let cities = [...allCities];
+
+    if (selectedCountry !== 'All') {
+      const catalog = COUNTRY_CITIES_CATALOG[selectedCountry] || getCitiesForCountryCatalog(selectedCountry, selectedContinent);
+
+      catalog.forEach((catCity, cIdx) => {
+        const existing = cities.find(
+          (c) => c.name.toLowerCase() === catCity.name.toLowerCase() && c.country === selectedCountry
+        );
+        if (!existing) {
+          cities.push({
+            id: `c_${selectedCountry.toLowerCase().replace(/\s+/g, '_')}_${cIdx}`,
+            name: catCity.name,
+            country: selectedCountry,
+            region: COUNTRY_CONTINENT_MAP[selectedCountry] || selectedContinent,
+            image: SPOT_PHOTOS[cIdx % SPOT_PHOTOS.length],
+            costIndex: catCity.cost || 'Moderate',
+            popularity: 95 - (cIdx % 12),
+            description: `Famous tourist destination in ${catCity.name}, ${selectedCountry}.`,
+            attractions: catCity.attractions || [
+              `${catCity.name} Landmark Tour`,
+              `${catCity.name} Culture Experience`,
+              `${catCity.name} Culinary Tasting`
+            ],
+          });
+        }
+      });
+    }
+
+    return cities.filter((city) => {
+      const cityContinent = city.region || city.continent;
+      const matchesContinent = selectedContinent === 'All' || cityContinent === selectedContinent;
+      const matchesCountry = selectedCountry === 'All' || city.country === selectedCountry;
+      const matchesSearch =
+        !citySearchQuery ||
+        city.name.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
+        city.country.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
+        (city.attractions || []).some((a) => a.toLowerCase().includes(citySearchQuery.toLowerCase()));
+
+      return matchesContinent && matchesCountry && matchesSearch;
+    });
+  };
+
+  const filteredCities = getFilteredCities();
+
+  // Handle Opening Custom City Modal
+  const handleOpenAddCityModal = () => {
+    setCustomCityName('');
+    setCustomCountryName(selectedCountry !== 'All' ? selectedCountry : '');
+    setCustomContinent(selectedContinent !== 'All' ? selectedContinent : 'Europe');
+    setCustomCostIndex('Moderate');
+    setCustomAttractionsText('');
+    setShowAddCityModal(true);
+  };
+
+  // Handle Saving Custom City
+  const handleSaveCustomCity = (e) => {
+    e.preventDefault();
+    if (!customCityName.trim()) {
+      showToast('Please enter a city name', 'error');
+      return;
+    }
+
+    const newCityId = `custom_c_${Date.now()}`;
+    const country = customCountryName.trim() || (selectedCountry !== 'All' ? selectedCountry : 'Custom Location');
+    const continent = customContinent || (selectedContinent !== 'All' ? selectedContinent : 'Europe');
+    const attractions = customAttractionsText
+      .split(',')
+      .map((a) => a.trim())
+      .filter(Boolean);
+
+    const newCityObj = {
+      id: newCityId,
+      name: customCityName.trim(),
+      country,
+      region: continent,
+      image: SPOT_PHOTOS[allCities.length % SPOT_PHOTOS.length],
+      costIndex: customCostIndex,
+      popularity: 99,
+      description: `User added destination in ${country}.`,
+      attractions: attractions.length > 0 ? attractions : [`${customCityName.trim()} Sightseeing Walk`, `${customCityName.trim()} Cultural Tour`],
+      isCustom: true,
+    };
+
+    setAllCities((prev) => [newCityObj, ...prev]);
+
+    const newStop = {
+      cityId: newCityId,
+      cityName: newCityObj.name,
+      country: newCityObj.country,
+      image: newCityObj.image,
+      order: selectedStops.length + 1,
+      accommodationCost: customCostIndex === 'Luxury' ? 15000 : customCostIndex === 'Moderate' ? 8000 : 4000,
+      transportCost: 3000,
+    };
+    setSelectedStops((prev) => [...prev, newStop]);
+
+    setShowAddCityModal(false);
+    showToast(`Added "${newCityObj.name}" to your selected travel stops!`, 'success');
+  };
+
+  // Handle Opening Add Activity Modal for a City
+  const handleOpenAddActivityModal = (stop) => {
+    setTargetCityForActivity(stop);
+    setCustomActivityName('');
+    setCustomActivityCategory('Sightseeing');
+    setCustomActivityCost(0);
+    setCustomActivityTime('10:00');
+    setShowAddActivityModal(true);
+  };
+
+  // Handle Saving Custom Activity to a City
+  const handleSaveCustomActivity = (e) => {
+    e.preventDefault();
+    if (!customActivityName.trim()) {
+      showToast('Please enter an activity name', 'error');
+      return;
+    }
+    if (!targetCityForActivity) return;
+
+    const cityId = targetCityForActivity.cityId;
+    const newActObj = {
+      id: `custom_act_${Date.now()}`,
+      cityId,
+      name: customActivityName.trim(),
+      category: customActivityCategory,
+      cost: Number(customActivityCost) || 0,
+      time: customActivityTime || '10:00',
+      selected: true,
+      image: SPOT_PHOTOS[(cityActivitiesMap[cityId]?.length || 0) % SPOT_PHOTOS.length],
+      isCustom: true,
+    };
+
+    setCityActivitiesMap((prev) => {
+      const existing = prev[cityId] || [];
+      return {
+        ...prev,
+        [cityId]: [...existing, newActObj],
+      };
+    });
+
+    setShowAddActivityModal(false);
+    showToast(`Added "${newActObj.name}" to ${targetCityForActivity.cityName}!`, 'success');
+  };
+
   useEffect(() => {
     if (selectedStops.length > 0) {
       loadSpecificActivitiesForCities();
@@ -92,19 +295,19 @@ const CreateTrip = () => {
         try {
           const acts = await getActivities({ cityId: stop.cityId });
           if (acts && acts.length > 0) {
-            map[stop.cityId] = acts.map((a, idx) => ({ 
+            map[stop.cityId] = acts.slice(0, 3).map((a, idx) => ({ 
               ...a, 
               selected: true,
               image: a.image || SPOT_PHOTOS[(sIdx * 4 + idx) % SPOT_PHOTOS.length]
             }));
           } else {
-            const cityObj = allCities.find((c) => c.id === stop.cityId);
-            const attractions = cityObj?.attractions || ['City Sightseeing Walk', 'Local Cultural Tour', 'Traditional Culinary Tasting', 'Park & Garden Experience'];
+            const cityObj = filteredCities.find((c) => c.id === stop.cityId || c.name === stop.cityName);
+            const attractions = (cityObj?.attractions || ['City Sightseeing Walk', 'Local Cultural Tour', 'Traditional Culinary Tasting']).slice(0, 3);
             map[stop.cityId] = attractions.map((attr, idx) => ({
               id: `act_${stop.cityId}_${idx}`,
               cityId: stop.cityId,
               name: attr,
-              category: idx === 0 ? 'Sightseeing' : idx === 1 ? 'Culture' : idx === 2 ? 'Food' : 'Nature',
+              category: idx === 0 ? 'Sightseeing' : idx === 1 ? 'Culture' : 'Food',
               cost: (idx + 1) * 600,
               time: idx === 0 ? '09:30' : idx === 1 ? '14:00' : '18:00',
               selected: true,
@@ -327,38 +530,135 @@ const CreateTrip = () => {
         </div>
       )}
 
-      {/* STEP 2: DESTINATION CITIES */}
+      {/* STEP 2: DESTINATION CITIES WITH CONTINENT, COUNTRY & ADD CUSTOM CITY OPTIONS */}
       {step === 2 && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Step 2: Select Travel Stop Cities</h2>
-              <p className="text-xs text-slate-500">Pick destination cities for your multi-city route ({selectedStops.length} selected)</p>
+              <p className="text-xs text-slate-500">
+                Filter by continent & country or add your own custom city ({selectedStops.length} selected)
+              </p>
             </div>
             <span className="text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200 w-max">
               Route: {selectedStops.map((s) => s.cityName).join(' → ') || 'No cities selected'}
             </span>
           </div>
 
+          {/* Interactive Filter & Action Bar */}
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
+                <Globe className="w-4 h-4 text-primary-600" />
+                <span>Global Continent & Country Filter</span>
+              </span>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={handleOpenAddCityModal}
+                  className="text-xs font-extrabold text-white bg-primary-600 hover:bg-primary-700 px-3 py-1.5 rounded-xl shadow-xs flex items-center space-x-1 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Custom City</span>
+                </button>
+
+                {(selectedContinent !== 'All' || selectedCountry !== 'All' || citySearchQuery) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedContinent('All');
+                      setSelectedCountry('All');
+                      setCitySearchQuery('');
+                    }}
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-xl border border-rose-200 flex items-center space-x-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* 1. Continent Filter (15+ Countries) */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">1. Continent</label>
+                <select
+                  value={selectedContinent}
+                  onChange={(e) => handleContinentChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                >
+                  <option value="All">🌍 All Continents</option>
+                  {availableContinents.map((cont) => (
+                    <option key={cont} value={cont}>
+                      {cont}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 2. Country Filter */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">2. Country</label>
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                >
+                  <option value="All">🏳️ All Countries {selectedContinent !== 'All' ? `(${selectedContinent})` : ''}</option>
+                  {availableCountries.map((ctry) => (
+                    <option key={ctry} value={ctry}>
+                      {ctry}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 3. Search Filter */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">3. Search City</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="e.g. Paris, Tokyo, Gotland..."
+                    value={citySearchQuery}
+                    onChange={(e) => setCitySearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  />
+                  {citySearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setCitySearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Selected Cities Badges Bar */}
           {selectedStops.length > 0 && (
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <span className="text-xs font-semibold text-slate-500 block">Selected Route Sequence:</span>
+            <div className="p-4 bg-primary-50/60 rounded-2xl border border-primary-200/80 space-y-2">
+              <span className="text-xs font-bold text-primary-900 block">Selected Route Sequence ({selectedStops.length} stops):</span>
               <div className="flex flex-wrap items-center gap-2">
                 {selectedStops.map((stop, i) => (
                   <React.Fragment key={stop.cityId}>
-                    <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs">
+                    <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-primary-300 text-xs font-extrabold text-slate-900 shadow-2xs">
                       <span>📍 {stop.cityName}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveStop(stop.cityId)}
-                        className="text-slate-400 hover:text-rose-600 ml-1"
+                        className="text-slate-400 hover:text-rose-600 ml-1 font-black"
                       >
                         ×
                       </button>
                     </div>
                     {i < selectedStops.length - 1 && (
-                      <ArrowRight className="w-3.5 h-3.5 text-primary-400" />
+                      <ArrowRight className="w-3.5 h-3.5 text-primary-500" />
                     )}
                   </React.Fragment>
                 ))}
@@ -367,35 +667,83 @@ const CreateTrip = () => {
           )}
 
           {/* Cities Picker Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[420px] overflow-y-auto pr-1">
-            {allCities.map((city) => {
-              const isSelected = selectedStops.some((s) => s.cityId === city.id);
-              return (
-                <div
-                  key={city.id}
-                  onClick={() => (isSelected ? handleRemoveStop(city.id) : handleAddStop(city))}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center space-x-3 ${
-                    isSelected
-                      ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500/20 shadow-sm'
-                      : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
-                  }`}
-                >
-                  <img src={city.image} alt={city.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-sm text-slate-900">{city.name}</h4>
-                    <p className="text-xs text-slate-500">{city.country}</p>
-                    <span className="text-[10px] font-semibold text-amber-600 mt-1 block">
-                      Cost: {city.costIndex}
-                    </span>
-                  </div>
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                    isSelected ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-400'
-                  }`}>
-                    {isSelected ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[440px] overflow-y-auto pr-1">
+            {/* Always visible Add Custom City Card at start of grid */}
+            <div
+              onClick={handleOpenAddCityModal}
+              className="p-3.5 rounded-2xl border-2 border-dashed border-primary-300 hover:border-primary-500 bg-primary-50/40 hover:bg-primary-50 transition-all cursor-pointer flex items-center space-x-3 group min-h-[76px]"
+            >
+              <div className="w-12 h-12 rounded-xl bg-primary-100 group-hover:bg-primary-600 group-hover:text-white text-primary-700 flex items-center justify-center shrink-0 transition-colors">
+                <Plus className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-extrabold text-xs text-primary-900 group-hover:text-primary-700">Can't find your city?</h4>
+                <p className="text-[11px] font-bold text-primary-600 mt-0.5">+ Add Custom City</p>
+              </div>
+            </div>
+
+            {filteredCities.length === 0 ? (
+              <div className="col-span-full py-8 text-center space-y-3 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                <p className="text-sm font-bold text-slate-700">No pre-listed cities match your filter criteria.</p>
+                <div className="flex justify-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenAddCityModal}
+                    className="px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-xl flex items-center space-x-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Custom City Now</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedContinent('All');
+                      setSelectedCountry('All');
+                      setCitySearchQuery('');
+                    }}
+                    className="px-4 py-2 bg-slate-200 text-slate-800 text-xs font-bold rounded-xl"
+                  >
+                    Reset Filters
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            ) : (
+              filteredCities.map((city) => {
+                const isSelected = selectedStops.some((s) => s.cityId === city.id || s.cityName === city.name);
+                return (
+                  <div
+                    key={city.id}
+                    onClick={() => (isSelected ? handleRemoveStop(city.id) : handleAddStop(city))}
+                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between space-x-3 ${
+                      isSelected
+                        ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500/20 shadow-sm'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <img src={city.image} alt={city.name} className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-1">
+                          <h4 className="font-black text-sm text-slate-900 truncate">{city.name}</h4>
+                          {city.isCustom && (
+                            <span className="text-[9px] font-extrabold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md">Custom</span>
+                          )}
+                        </div>
+                        <p className="text-xs font-semibold text-slate-500 truncate">{city.country} • <span className="text-primary-700 font-bold">{city.region || city.continent}</span></p>
+                        <span className="text-[10px] font-bold text-amber-600 mt-0.5 block">
+                          Cost: {city.costIndex}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                      isSelected ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-400'
+                    }`}>
+                      {isSelected ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-slate-100">
@@ -420,14 +768,14 @@ const CreateTrip = () => {
         </div>
       )}
 
-      {/* STEP 3: SPECIFIC CITY ACTIVITIES PREVIEW & SELECTION */}
+      {/* STEP 3: SPECIFIC CITY ACTIVITIES PREVIEW & SELECTION WITH ADD ACTIVITY BUTTON PER CITY */}
       {step === 3 && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Step 3: Top Attractions per City</h2>
               <p className="text-xs text-slate-500">
-                Pick popular authentic tourist spots for each of your selected cities (Customize times & add custom events later in the builder)
+                Select from popular attractions or add your own custom activity for each city stop
               </p>
             </div>
             <Sparkles className="w-5 h-5 text-primary-500" />
@@ -439,8 +787,8 @@ const CreateTrip = () => {
 
               return (
                 <div key={stop.cityId} className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-4">
-                  {/* City Header */}
-                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                  {/* City Header with Add Activity Button */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/80 pb-3 gap-2">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 rounded-xl bg-primary-600 text-white flex items-center justify-center font-bold text-xs">
                         <MapPin className="w-4 h-4" />
@@ -449,17 +797,47 @@ const CreateTrip = () => {
                         <h3 className="font-extrabold text-base text-slate-900">
                           {stop.cityName}, {stop.country}
                         </h3>
-                        <span className="text-[11px] text-slate-500">Famous Tourist Spots & Experiences</span>
+                        <span className="text-[11px] text-slate-500">Famous Tourist Spots & Custom Experiences</span>
                       </div>
                     </div>
 
-                    <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200">
-                      {activities.filter((a) => a.selected).length} Selected
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAddActivityModal(stop)}
+                        className="text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 px-3 py-1.5 rounded-xl shadow-xs flex items-center space-x-1.5 transition-all"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Activity</span>
+                      </button>
+
+                      <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                        {activities.filter((a) => a.selected).length} Selected
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Specific City Activities Cards */}
+                  {/* Specific City Activities Cards & Add Activity Card */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Add Activity Card in Grid */}
+                    <div
+                      onClick={() => handleOpenAddActivityModal(stop)}
+                      className="p-3.5 rounded-2xl border-2 border-dashed border-primary-300 hover:border-primary-500 bg-white hover:bg-primary-50/50 transition-all cursor-pointer flex items-center justify-between space-x-3 group min-h-[72px]"
+                    >
+                      <div className="flex items-center space-x-3 min-w-0">
+                        <div className="w-12 h-12 rounded-xl bg-primary-100 group-hover:bg-primary-600 group-hover:text-white text-primary-700 flex items-center justify-center shrink-0 transition-colors">
+                          <Plus className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-extrabold text-xs text-primary-900 group-hover:text-primary-700">Add Custom Activity</h4>
+                          <p className="text-[10px] font-bold text-primary-600 mt-0.5">+ Add event to {stop.cityName}</p>
+                        </div>
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center shrink-0">
+                        <Plus className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+
                     {activities.map((act) => (
                       <div
                         key={act.id}
@@ -475,7 +853,12 @@ const CreateTrip = () => {
                             <img src={act.image} alt={act.name} className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200" />
                           )}
                           <div className="min-w-0">
-                            <h4 className="font-bold text-xs text-slate-900 line-clamp-1">{act.name}</h4>
+                            <div className="flex items-center space-x-1">
+                              <h4 className="font-bold text-xs text-slate-900 line-clamp-1">{act.name}</h4>
+                              {act.isCustom && (
+                                <span className="text-[8px] font-extrabold bg-teal-100 text-teal-800 px-1 py-0.5 rounded-xs shrink-0">Custom</span>
+                              )}
+                            </div>
                             <div className="flex items-center space-x-2 mt-0.5">
                               <span className="text-[10px] font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md">
                                 {act.category || 'Sightseeing'}
@@ -599,6 +982,223 @@ const CreateTrip = () => {
                 </>
               )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ADD CUSTOM CITY MODAL */}
+      {showAddCityModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-primary-100 text-primary-700 flex items-center justify-center font-bold">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Add Custom Destination</h3>
+                  <p className="text-xs text-slate-500">Can't find your city? Add it manually below!</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddCityModal(false)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomCity} className="space-y-4">
+              <div>
+                <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                  City Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Gotland, Lonavala, Santorini..."
+                  value={customCityName}
+                  onChange={(e) => setCustomCityName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Country</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sweden, India, Greece..."
+                    value={customCountryName}
+                    onChange={(e) => setCustomCountryName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Continent</label>
+                  <select
+                    value={customContinent}
+                    onChange={(e) => setCustomContinent(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  >
+                    {GLOBAL_CONTINENTS.map((cont) => (
+                      <option key={cont} value={cont}>
+                        {cont}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Budget Level</label>
+                <select
+                  value={customCostIndex}
+                  onChange={(e) => setCustomCostIndex(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                >
+                  <option value="Budget">Budget (₹)</option>
+                  <option value="Moderate">Moderate (₹₹)</option>
+                  <option value="Luxury">Luxury (₹₹₹)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Top Spots / Attractions <span className="text-slate-400 font-normal">(comma-separated)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Old Town Walk, Beach Sunset, Historic Fort"
+                  value={customAttractionsText}
+                  onChange={(e) => setCustomAttractionsText(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCityModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-600/20 flex items-center space-x-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add & Select City</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD CUSTOM ACTIVITY MODAL */}
+      {showAddActivityModal && targetCityForActivity && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-primary-100 text-primary-700 flex items-center justify-center font-bold">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Add Custom Activity</h3>
+                  <p className="text-xs text-slate-500">Adding activity to 📍 {targetCityForActivity.cityName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddActivityModal(false)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomActivity} className="space-y-4">
+              <div>
+                <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                  Activity Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Boat Cruise, Scuba Diving, Dinner..."
+                  value={customActivityName}
+                  onChange={(e) => setCustomActivityName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                  <select
+                    value={customActivityCategory}
+                    onChange={(e) => setCustomActivityCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  >
+                    <option value="Sightseeing">Sightseeing</option>
+                    <option value="Culture">Culture</option>
+                    <option value="Food">Food</option>
+                    <option value="Nature">Nature</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Nightlife">Nightlife</option>
+                    <option value="Relaxation">Relaxation</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Preferred Time</label>
+                  <input
+                    type="time"
+                    value={customActivityTime}
+                    onChange={(e) => setCustomActivityTime(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Estimated Cost (₹)</label>
+                <div className="relative">
+                  <IndianRupee className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0 for Free"
+                    value={customActivityCost}
+                    onChange={(e) => setCustomActivityCost(e.target.value)}
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddActivityModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-600/20 flex items-center space-x-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Activity</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

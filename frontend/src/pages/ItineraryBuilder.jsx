@@ -52,7 +52,6 @@ import {
   PieChart,
   ChevronDown,
   AlertTriangle,
-  Users,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -357,30 +356,6 @@ const ItineraryBuilder = () => {
     }
   };
 
-  // Adults Count Change Handler
-  const handleAdultsChange = async (newCount) => {
-    const val = Math.max(1, parseInt(newCount) || 1);
-    try {
-      await updateTrip(trip.id, { adultsCount: val });
-      setTrip((prev) => ({ ...prev, adultsCount: val, travelersCount: val + (prev.childrenCount || 0) }));
-      showToast(`Updated to ${val} ${val === 1 ? 'adult' : 'adults'}`, 'success');
-    } catch (err) {
-      showToast('Failed to update adults count', 'error');
-    }
-  };
-
-  // Children Count Change Handler
-  const handleChildrenChange = async (newCount) => {
-    const val = Math.max(0, parseInt(newCount) || 0);
-    try {
-      await updateTrip(trip.id, { childrenCount: val });
-      setTrip((prev) => ({ ...prev, childrenCount: val, travelersCount: (prev.adultsCount || 1) + val }));
-      showToast(`Updated to ${val} ${val === 1 ? 'child' : 'children'}`, 'success');
-    } catch (err) {
-      showToast('Failed to update children count', 'error');
-    }
-  };
-
   // Reordering Stops via DND
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -593,7 +568,7 @@ const ItineraryBuilder = () => {
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">{trip.name}</h1>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300">
               <span className="flex items-center">
                 <Calendar className="w-3.5 h-3.5 mr-1 text-primary-400" />
                 {trip.startDate} – {trip.endDate} ({trip.totalDays} Days)
@@ -602,55 +577,6 @@ const ItineraryBuilder = () => {
                 <MapPin className="w-3.5 h-3.5 mr-1 text-teal-400" />
                 {trip.stops?.length || 0} Cities
               </span>
-
-              {/* Adults Counter Pill */}
-              <div className="flex items-center space-x-1.5 bg-white/10 px-2.5 py-1 rounded-xl border border-white/15">
-                <Users className="w-3.5 h-3.5 text-purple-300" />
-                <span className="font-bold">{trip.adultsCount || 1} {(trip.adultsCount || 1) === 1 ? 'Adult' : 'Adults'}</span>
-                <div className="flex items-center ml-1 space-x-1">
-                  <button
-                    type="button"
-                    onClick={() => handleAdultsChange((trip.adultsCount || 1) - 1)}
-                    disabled={(trip.adultsCount || 1) <= 1}
-                    className="w-4 h-4 rounded bg-white/20 hover:bg-white/30 text-white font-bold flex items-center justify-center text-[10px] disabled:opacity-30 cursor-pointer"
-                    title="Decrease adults"
-                  >
-                    -
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAdultsChange((trip.adultsCount || 1) + 1)}
-                    className="w-4 h-4 rounded bg-white/20 hover:bg-white/30 text-white font-bold flex items-center justify-center text-[10px] cursor-pointer"
-                    title="Increase adults"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {/* Children Counter Pill */}
-              <div className="flex items-center space-x-1.5 bg-white/10 px-2.5 py-1 rounded-xl border border-white/15">
-                <span className="font-bold">{trip.childrenCount || 0} {(trip.childrenCount || 0) === 1 ? 'Child' : 'Kids'}</span>
-                <div className="flex items-center ml-1 space-x-1">
-                  <button
-                    type="button"
-                    onClick={() => handleChildrenChange((trip.childrenCount || 0) - 1)}
-                    disabled={(trip.childrenCount || 0) <= 0}
-                    className="w-4 h-4 rounded bg-white/20 hover:bg-white/30 text-white font-bold flex items-center justify-center text-[10px] disabled:opacity-30 cursor-pointer"
-                    title="Decrease children"
-                  >
-                    -
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleChildrenChange((trip.childrenCount || 0) + 1)}
-                    className="w-4 h-4 rounded bg-white/20 hover:bg-white/30 text-white font-bold flex items-center justify-center text-[10px] cursor-pointer"
-                    title="Increase children"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -686,20 +612,10 @@ const ItineraryBuilder = () => {
         {/* Live Budget Meter */}
         <div className="relative z-10 mt-6 pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="bg-black/40 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
-            <span className="text-slate-400 block mb-0.5">Whole Trip Group Cost:</span>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-lg font-extrabold text-teal-400 flex items-center" title="Total Group Cost">
-                {formatPrice(totalStopsCost)}
-              </span>
-              <span className="text-[10px] text-teal-200/80 font-bold">
-                ({((trip.adultsCount || 1) + (trip.childrenCount || 0))} Travelers)
-              </span>
-            </div>
-            {((trip.adultsCount || 1) + (trip.childrenCount || 0)) > 1 && (
-              <span className="text-[11px] text-purple-300 font-bold block mt-1">
-                Avg: {formatPrice(Math.round(totalStopsCost / ((trip.adultsCount || 1) + (trip.childrenCount || 0))))} / person
-              </span>
-            )}
+            <span className="text-slate-400 block mb-0.5">Calculated Total Cost:</span>
+            <span className="text-lg font-extrabold text-teal-400 flex items-center">
+              {formatPrice(totalStopsCost)}
+            </span>
           </div>
 
           <div className="bg-black/40 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">

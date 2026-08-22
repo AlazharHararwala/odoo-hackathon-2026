@@ -17,7 +17,6 @@ import {
 import { createShareLink } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
-import { formatDateDisplay } from '../utils/dateUtils';
 
 const TripCard = ({ trip, onDelete, onDeleteClick, isCompact = false }) => {
   const navigate = useNavigate();
@@ -99,17 +98,11 @@ const TripCard = ({ trip, onDelete, onDeleteClick, isCompact = false }) => {
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold border-b border-slate-100 pb-2.5">
             <span className="flex items-center">
               <Calendar className="w-3.5 h-3.5 text-primary-600 mr-1.5" />
-              {formatDateDisplay(trip.startDate)} – {formatDateDisplay(trip.endDate)}
+              {trip.startDate} – {trip.endDate}
             </span>
-            <div className="flex items-center space-x-1.5">
-              <span className="text-[11px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100 flex items-center" title={`${trip.adultsCount || 1} Adults${(trip.childrenCount || 0) > 0 ? `, ${trip.childrenCount} Children` : ''}`}>
-                <Users className="w-3 h-3 mr-1" />
-                {trip.adultsCount || 1}A{(trip.childrenCount || 0) > 0 ? ` + ${trip.childrenCount}C` : ''}
-              </span>
-              <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                {trip.stops?.length || 0} Cities
-              </span>
-            </div>
+            <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+              {trip.stops?.length || 0} Cities
+            </span>
           </div>
 
           {/* Cities Pills */}
@@ -135,17 +128,10 @@ const TripCard = ({ trip, onDelete, onDeleteClick, isCompact = false }) => {
       <div className="p-4 pt-0 space-y-3">
         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
           <div>
-            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Group Total • Per Person</span>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-sm font-extrabold text-slate-900 flex items-center" title="Total Group Cost">
-                {formatPrice(trip.estimatedBudget || 0)}
-              </span>
-              {((trip.adultsCount || 1) + (trip.childrenCount || 0)) > 1 ? (
-                <span className="text-[10px] text-purple-600 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100" title="Per Person Average Cost">
-                  {formatPrice(Math.round((trip.estimatedBudget || 0) / ((trip.adultsCount || 1) + (trip.childrenCount || 0))))}/person
-                </span>
-              ) : null}
-            </div>
+            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Estimated Budget</span>
+            <span className="text-sm font-extrabold text-slate-900 flex items-center">
+              {formatPrice(trip.estimatedBudget || 0)}
+            </span>
           </div>
 
           {/* Action Buttons */}

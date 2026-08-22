@@ -38,14 +38,8 @@ export const LanguageProvider = ({ children }) => {
     if (newCurr) setCurrency(newCurr);
   };
 
-  // Direct text passthrough with clean fallback formatting
-  const t = (key, fallback = '') => {
-    if (fallback) return fallback;
-    if (typeof key === 'string' && key.includes('_')) {
-      return key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    }
-    return key;
-  };
+  // Direct text passthrough without language translation
+  const t = (key, fallback = '') => fallback || key;
 
   // Currency Formatter
   const formatPrice = (amountInINR = 0, allowFree = false) => {

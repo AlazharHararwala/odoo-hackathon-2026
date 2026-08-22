@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -15,27 +15,21 @@ import {
   Bell, 
   IndianRupee, 
   Mail, 
-  Camera,
-  Upload,
-  FolderOpen,
-  RefreshCcw,
-  Image as ImageIcon
+  Camera 
 } from 'lucide-react';
 
 const ProfileSettings = () => {
   const { user, updateUserProfile, logoutUser } = useAuth();
   const { showToast } = useToast();
   const { t, currency: activeCurr, setCurrency: setGlobalCurrency } = useLanguage();
-  const fileInputRef = useRef(null);
 
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('preferences');
 
   // Form State
-  const [name, setName] = useState(user?.name || 'Alazhar');
-  const [email, setEmail] = useState(user?.email || 'az@gmail.com');
+  const [name, setName] = useState(user?.name || 'Alex Morgan');
+  const [email, setEmail] = useState(user?.email || 'alex.morgan@example.com');
   const [bio, setBio] = useState(user?.bio || 'Avid traveler exploring one city at a time.');
-  const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80');
-  const [isDragging, setIsDragging] = useState(false);
+  const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
 
   // Preferences Form State
   const [currency, setCurrency] = useState(activeCurr || 'USD ($)');
@@ -45,16 +39,6 @@ const ProfileSettings = () => {
   useEffect(() => {
     if (activeCurr) setCurrency(activeCurr);
   }, [activeCurr]);
-
-  // Sync with active user if it changes or initializes
-  useEffect(() => {
-    if (user) {
-      if (user.name) setName(user.name);
-      if (user.email) setEmail(user.email);
-      if (user.bio !== undefined) setBio(user.bio);
-      if (user.avatar) setAvatar(user.avatar);
-    }
-  }, [user]);
 
   // Saved Cities
   const [savedCities, setSavedCities] = useState([]);
@@ -71,57 +55,6 @@ const ProfileSettings = () => {
       const saved = cities.filter((c) => user?.savedCityIds?.includes(c.id) || ['c_goa', 'c_paris', 'c_tokyo'].includes(c.id));
       setSavedCities(saved);
     } catch (e) { console.error(e); }
-  };
-
-  const processImageFile = (file) => {
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      showToast('Please upload a valid image file (PNG, JPG, WEBP, etc.)', 'error');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Image size should be under 5MB', 'error');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result;
-      if (dataUrl) {
-        setAvatar(dataUrl);
-        showToast('Image selected! Click "Save Changes" to apply.', 'success');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleFileInputChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processImageFile(file);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processImageFile(file);
-    }
   };
 
   const handleSaveProfile = (e) => {
@@ -184,97 +117,24 @@ const ProfileSettings = () => {
       {/* TAB 1: PROFILE */}
       {activeTab === 'profile' && (
         <form onSubmit={handleSaveProfile} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in">
-          {/* Avatar Section with File Picker & Drag-and-Drop Zone */}
-          <div className="space-y-4 pb-6 border-b border-slate-100">
-            <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-              Profile Photo & Avatar
-            </label>
-
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              {/* Current Avatar Preview */}
-              <div className="relative group shrink-0">
-                <img
-                  src={avatar}
-                  alt="Avatar"
-                  className="w-24 h-24 rounded-full object-cover ring-4 ring-primary-100 shadow-md transition-transform group-hover:scale-105"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-2xs cursor-pointer"
-                  title="Upload from File"
-                >
-                  <Camera className="w-5 h-5 mb-0.5" />
-                  <span className="text-[9px] font-bold">Change</span>
-                </button>
-              </div>
-
-              {/* Drag and Drop Zone + File Upload Button */}
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`flex-1 w-full p-5 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-4 ${
-                  isDragging
-                    ? 'border-primary-500 bg-primary-50/80 scale-[1.01] shadow-md ring-4 ring-primary-500/20'
-                    : 'border-slate-300 bg-slate-50/60 hover:bg-slate-100/80 hover:border-slate-400'
-                }`}
+          <div className="flex items-center space-x-5 pb-6 border-b border-slate-100">
+            <div className="relative">
+              <img src={avatar} alt="Avatar" className="w-20 h-20 rounded-full object-cover ring-4 ring-slate-100 shadow-md" />
+              <button
+                type="button"
+                className="absolute bottom-0 right-0 p-1.5 bg-primary-600 text-white rounded-full shadow-md hover:bg-primary-700 transition-colors"
+                title="Change Avatar URL"
+                onClick={() => {
+                  const url = prompt('Enter image URL for avatar:', avatar);
+                  if (url) setAvatar(url);
+                }}
               >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileInputChange}
-                  accept="image/*"
-                  className="hidden"
-                />
-
-                <div className="flex items-center space-x-3.5 text-center sm:text-left">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
-                    isDragging ? 'bg-primary-600 text-white' : 'bg-primary-100 text-primary-700'
-                  }`}>
-                    <Upload className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">
-                      {isDragging ? 'Drop your image file here!' : 'Drag & Drop your image here'}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      or click to choose an image from your device (PNG, JPG, WEBP)
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 shadow-2xs transition-all flex items-center space-x-1.5 cursor-pointer"
-                  >
-                    <FolderOpen className="w-3.5 h-3.5 text-primary-600" />
-                    <span>Choose File</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const url = prompt('Enter image URL for avatar:', avatar);
-                      if (url && url.trim()) {
-                        setAvatar(url.trim());
-                        showToast('Avatar URL set!', 'success');
-                      }
-                    }}
-                    className="p-2 text-slate-500 hover:text-slate-900 hover:bg-white rounded-xl border border-transparent hover:border-slate-200 transition-colors"
-                    title="Paste Image URL"
-                  >
-                    <Globe className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg text-slate-900">{name}</h3>
+              <p className="text-xs text-slate-500">{email}</p>
             </div>
           </div>
 

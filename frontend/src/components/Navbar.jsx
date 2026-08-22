@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Search, 
   Bell, 
@@ -17,6 +18,7 @@ import {
 const Navbar = ({ onOpenMobileSidebar }) => {
   const { user, logoutUser } = useAuth();
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,7 +61,7 @@ const Navbar = ({ onOpenMobileSidebar }) => {
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search destinations, trips, activities..."
+            placeholder={t('searchPlaceholder', 'Search destinations, trips, activities...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-sm bg-slate-100/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-slate-400"
@@ -72,10 +74,10 @@ const Navbar = ({ onOpenMobileSidebar }) => {
         {/* Quick Plan Button */}
         <button
           onClick={() => navigate('/create-trip')}
-          className="hidden sm:flex items-center space-x-1.5 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all hover:shadow duration-150"
+          className="hidden sm:flex items-center space-x-1.5 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all hover:shadow duration-150 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>New Trip</span>
+          <span>{t('newTrip', 'New Trip')}</span>
         </button>
 
         {/* Notifications Dropdown */}

@@ -3,19 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   MapPin, 
-  IndianRupee, 
-  Eye, 
-  Edit3, 
-  Share2, 
   Trash2, 
+  Edit3, 
+  IndianRupee, 
+  Share2, 
+  Eye, 
+  Layers, 
+  Sparkles,
+  Users,
+  MoreVertical,
   Clock 
 } from 'lucide-react';
 import { createShareLink } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 
-const TripCard = ({ trip, onDelete, onDeleteClick }) => {
+const TripCard = ({ trip, onDelete, onDeleteClick, isCompact = false }) => {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { formatPrice } = useLanguage();
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -124,8 +130,7 @@ const TripCard = ({ trip, onDelete, onDeleteClick }) => {
           <div>
             <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Estimated Budget</span>
             <span className="text-sm font-extrabold text-slate-900 flex items-center">
-              <IndianRupee className="w-3.5 h-3.5 text-primary-600" />
-              {(trip.estimatedBudget || 0).toLocaleString('en-IN')}
+              {formatPrice(trip.estimatedBudget || 0)}
             </span>
           </div>
 

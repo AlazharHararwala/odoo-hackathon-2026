@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getActivities } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Search, 
   X, 
@@ -29,6 +30,7 @@ const CATEGORIES = [
 ];
 
 const ActivitySearchModal = ({ isOpen, onClose, cityId, cityName, onAddActivity }) => {
+  const { formatPrice, currencySymbol, t } = useLanguage();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,10 +105,12 @@ const ActivitySearchModal = ({ isOpen, onClose, cityId, cityName, onAddActivity 
               />
             </div>
             <div className="relative">
-              <IndianRupee className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <span className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs flex items-center justify-center">
+                {currencySymbol}
+              </span>
               <input
                 type="number"
-                placeholder="Max budget (₹)"
+                placeholder={`Max budget (${currencySymbol})`}
                 value={maxCost}
                 onChange={(e) => setMaxCost(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-slate-100/80 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
@@ -184,8 +188,7 @@ const ActivitySearchModal = ({ isOpen, onClose, cityId, cityName, onAddActivity 
                           {act.durationHours}h
                         </span>
                         <span className="flex items-center text-slate-900 font-extrabold">
-                          <IndianRupee className="w-3.5 h-3.5" />
-                          {act.cost === 0 ? 'Free' : act.cost.toLocaleString('en-IN')}
+                          {formatPrice(act.cost || 0)}
                         </span>
                       </div>
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getSharedTrip, copySharedTrip } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Globe, 
   Copy, 
@@ -21,6 +22,7 @@ const SharedTrip = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { isAuthenticated } = useAuth();
+  const { formatPrice, t } = useLanguage();
 
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -157,8 +159,7 @@ const SharedTrip = () => {
                 {trip.startDate} – {trip.endDate} ({trip.totalDays} Days)
               </span>
               <span className="flex items-center font-bold text-amber-400 text-sm">
-                <IndianRupee className="w-4 h-4 mr-0.5" />
-                {(trip.estimatedBudget || 0).toLocaleString('en-IN')} Est. Budget
+                {formatPrice(trip.estimatedBudget || 0)} Est. Budget
               </span>
             </div>
           </div>
@@ -218,8 +219,7 @@ const SharedTrip = () => {
                     </div>
                     <h4 className="font-bold text-sm text-slate-100">{act.name}</h4>
                     <span className="text-xs font-bold text-slate-300 flex items-center">
-                      <IndianRupee className="w-3 h-3" />
-                      {act.cost === 0 ? 'Free' : act.cost?.toLocaleString('en-IN')}
+                      {formatPrice(act.cost || 0)}
                     </span>
                   </div>
                 ))}

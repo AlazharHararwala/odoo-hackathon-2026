@@ -4,6 +4,7 @@ import { getTrips, deleteTrip, createShareLink } from '../services/api';
 import TripCard from '../components/TripCard';
 import ConfirmModal from '../components/ConfirmModal';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Search, 
   Plus, 
@@ -23,6 +24,7 @@ import {
 const MyTrips = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { formatPrice, t } = useLanguage();
 
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -248,8 +250,7 @@ const MyTrips = () => {
                 <div className="text-right">
                   <span className="text-[10px] text-slate-400 font-semibold block">Est. Budget</span>
                   <span className="text-sm font-extrabold text-primary-700 flex items-center justify-end">
-                    <IndianRupee className="w-3.5 h-3.5" />
-                    {(trip.estimatedBudget || 0).toLocaleString('en-IN')}
+                    {formatPrice(trip.estimatedBudget || 0)}
                   </span>
                 </div>
 

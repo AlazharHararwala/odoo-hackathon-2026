@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getTrips, getCities, createShareLink, deleteTrip } from '../services/api';
 import TripCard from '../components/TripCard';
 import ConfirmModal from '../components/ConfirmModal';
@@ -14,12 +15,14 @@ import {
   IndianRupee, 
   ArrowRight, 
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  DollarSign
 } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { t, formatPrice } = useLanguage();
   const navigate = useNavigate();
 
   const [trips, setTrips] = useState([]);
@@ -32,16 +35,15 @@ const Dashboard = () => {
   }, []);
 
   const fetchDashboardData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const [tripsData, citiesData] = await Promise.all([
         getTrips(),
         getCities()
       ]);
       setTrips(tripsData);
-      setPopularCities(citiesData.slice(0, 6)); // Top 6 popular destinations
+      setPopularCities(citiesData.slice(0, 4));
     } catch (err) {
-      console.error('Failed to load dashboard data:', err);
       showToast('Error loading dashboard data', 'error');
     } finally {
       setLoading(false);
@@ -71,38 +73,57 @@ const Dashboard = () => {
     }
   };
 
-  // Financial Stats Calculation
-  const totalPlannedSpending = trips.reduce((acc, t) => acc + (t.estimatedBudget || 0), 0);
-  const totalDays = trips.reduce((acc, t) => acc + (t.totalDays || 1), 0);
-  const avgPerDay = totalDays > 0 ? Math.round(totalPlannedSpending / totalDays) : 0;
-  const upcomingTrip = trips.find(t => t.status === 'Upcoming') || trips[0];
+  const totalPlannedSpending = trips.reduce((sum, t) => sum + (t.estimatedBudget || 0), 0);
+  const totalDaysPlanned = trips.reduce((sum, t) => {
+    if (!t.startDate || !t.endDate) return sum;
+    const days = Math.ceil((new Date(t.endDate) - new Date(t.startDate)) / (1000 * 60 * 60 * 24)) + 1;
+    return sum + (days > 0 ? days : 1);
+  }, 0);
+  const avgPerDay = totalDaysPlanned > 0 ? Math.round(totalPlannedSpending / totalDaysPlanned) : 0;
+
+  const upcomingTrip = trips
+    .filter((t) => t.status === 'Upcoming' || t.status === 'Planning')
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))[0];
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 bg-slate-200 rounded-xl w-64"></div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="h-28 bg-slate-200 rounded-2xl"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Top Welcome Banner */}
-      <div className="relative rounded-3xl bg-gradient-to-r from-slate-900 via-primary-950 to-slate-900 text-white p-6 sm:p-10 shadow-2xl overflow-hidden border border-slate-800">
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary-400 via-teal-600 to-transparent" />
+      {/* Welcome Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary-500/20 border border-primary-500/30 text-primary-300 text-xs font-semibold backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Smart Travel Dashboard</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              Good morning, {user?.name ? user.name.split(' ')[0] : 'Traveler'} 👋
-            </h1>
-            <p className="text-slate-300 text-sm max-w-lg leading-relaxed">
-              Ready to plan your next adventure? Customize multi-city stops, activities, and budget estimates.
-            </p>
+        <div className="relative z-10 space-y-2 max-w-xl">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-300 text-xs font-semibold border border-primary-500/30">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Welcome back, {user?.name || 'Explorer'}</span>
           </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">
+            Ready to plan your next great adventure?
+          </h1>
+          <p className="text-sm text-slate-300">
+            You have {trips.length} active trips planned across {trips.reduce((acc, t) => acc + (t.stops?.length || 0), 0)} destination stops.
+          </p>
+        </div>
 
+        <div className="relative z-10 flex flex-wrap gap-3">
           <button
             onClick={() => navigate('/create-trip')}
-            className="px-6 py-3.5 bg-gradient-to-r from-primary-500 to-teal-500 hover:from-primary-600 hover:to-teal-600 text-white font-bold rounded-2xl text-sm shadow-xl shadow-primary-900/50 flex items-center space-x-2.5 transition-all transform hover:-translate-y-0.5"
+            className="px-5 py-3 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-xs font-bold shadow-lg shadow-primary-900/30 flex items-center space-x-2 transition-all hover:scale-105"
           >
-            <Plus className="w-5 h-5" />
-            <span>Plan New Trip</span>
+            <Plus className="w-4 h-4" />
+            <span>{t('planNewTrip', 'Plan New Trip')}</span>
           </button>
         </div>
       </div>
@@ -111,21 +132,21 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center space-x-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <IndianRupee className="w-6 h-6" />
+            <TrendingUp className="w-6 h-6" />
           </div>
           <div>
             <span className="text-xs font-medium text-slate-500">Total Planned Spending</span>
-            <h3 className="text-xl font-bold text-slate-900 mt-0.5">₹{totalPlannedSpending.toLocaleString('en-IN')}</h3>
+            <h3 className="text-xl font-bold text-slate-900 mt-0.5">{formatPrice(totalPlannedSpending)}</h3>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center space-x-4">
           <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-6 h-6" />
+            <PieChart className="w-6 h-6" />
           </div>
           <div>
             <span className="text-xs font-medium text-slate-500">Average Spend / Day</span>
-            <h3 className="text-xl font-bold text-slate-900 mt-0.5">₹{avgPerDay.toLocaleString('en-IN')}</h3>
+            <h3 className="text-xl font-bold text-slate-900 mt-0.5">{formatPrice(avgPerDay)}</h3>
           </div>
         </div>
 

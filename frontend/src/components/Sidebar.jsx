@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   LayoutDashboard, 
   Map, 
@@ -9,18 +10,21 @@ import {
   PieChart, 
   Settings, 
   Globe,
+  Sparkles,
   X
 } from 'lucide-react';
 
 const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
+  const { t } = useLanguage();
+
   const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'My Trips', path: '/trips', icon: Map },
-    { label: 'Plan New Trip', path: '/create-trip', icon: PlusCircle, highlight: true },
-    { label: 'Explore Cities', path: '/explore', icon: Compass },
-    { label: 'Timeline & Calendar', path: '/timeline', icon: Calendar },
-    { label: 'Budget Analytics', path: '/budget', icon: PieChart },
-    { label: 'Settings', path: '/settings', icon: Settings },
+    { label: t('dashboard', 'Dashboard'), path: '/dashboard', icon: LayoutDashboard },
+    { label: t('myTrips', 'My Trips'), path: '/trips', icon: Map },
+    { label: t('planNewTrip', 'Plan New Trip'), path: '/create-trip', icon: PlusCircle, highlight: true },
+    { label: t('exploreCities', 'Explore Cities'), path: '/explore', icon: Compass },
+    { label: t('timelineCalendar', 'Timeline & Calendar'), path: '/timeline', icon: Calendar },
+    { label: t('budgetAnalytics', 'Budget Analytics'), path: '/budget', icon: PieChart },
+    { label: t('settings', 'Settings'), path: '/settings', icon: Settings },
   ];
 
   const content = (
@@ -72,15 +76,23 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         })}
       </nav>
 
-      {/* Bottom Promo Card */}
-      <div className="p-4 m-4 rounded-2xl bg-gradient-to-br from-slate-800/80 to-slate-900 border border-slate-700/60">
-        <div className="text-xs font-semibold text-primary-400 uppercase tracking-wider mb-1">Hackathon Edition</div>
+      {/* Bottom Professional Travel Assistant Card */}
+      <div className="p-4 m-4 rounded-2xl bg-gradient-to-br from-slate-800/90 to-slate-950 border border-slate-700/70 shadow-lg relative overflow-hidden group">
+        <div className="flex items-center space-x-2 mb-2">
+          <div className="w-6 h-6 rounded-lg bg-primary-500/20 border border-primary-400/30 flex items-center justify-center">
+            <Sparkles className="w-3.5 h-3.5 text-primary-400" />
+          </div>
+          <span className="text-xs font-bold text-white tracking-wide">{t('smartAssistant', 'Smart Travel Assistant')}</span>
+        </div>
         <p className="text-xs text-slate-400 leading-relaxed mb-3">
-          Visual multi-city trip planning powered by GlobeTrotter REST client architecture.
+          {t('assistantDesc', 'Optimize multi-city routes, track real-time budgets, and explore curated local attractions.')}
         </p>
-        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800">
-          <span>v1.0.0 Frontend</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2.5 border-t border-slate-800">
+          <span className="flex items-center space-x-1.5 font-semibold text-emerald-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+            <span>{t('allSystemsLive', 'All Systems Live')}</span>
+          </span>
+          <span className="text-slate-500 font-mono text-[10px]">v1.2.0</span>
         </div>
       </div>
     </div>

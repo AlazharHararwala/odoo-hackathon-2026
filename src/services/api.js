@@ -23,7 +23,7 @@ apiClient.interceptors.request.use((config) => {
 
 // Helper function to calculate automatic trip status based on current date vs duration
 export const calculateTripStatus = (startDateStr, endDateStr, manualStatus = 'Planning') => {
-  if (!startDateStr || !endDateStr) return manualStatus;
+  if (!startDateStr || !endDateStr) return manualStatus || 'Planning';
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -40,7 +40,18 @@ export const calculateTripStatus = (startDateStr, endDateStr, manualStatus = 'Pl
   if (today >= start && today <= end) {
     return 'In Progress';
   }
-  return manualStatus || 'Planning';
+
+  // Calculate difference in days between start date and today
+  const diffTime = start.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  // If the trip starts within 2 days prior (e.g. 1 or 2 days away), mark as Upcoming
+  if (diffDays <= 2 && diffDays > 0) {
+    return 'Upcoming';
+  }
+
+  // If start date is more than 2 days in the future, it is in Planning stage
+  return 'Planning';
 };
 
 // Local Storage Helper for Mock Data persistence
@@ -114,9 +125,12 @@ export const getCurrentUser = async () => {
     const response = await apiClient.get('/auth/me');
     return response.data;
   }
-  await delay(150);
-  const token = localStorage.getItem('globetrotter_token');
-  if (!token) return null;
+  await delay(50);
+  let token = localStorage.getItem('globetrotter_token');
+  if (!token) {
+    token = 'mock_jwt_token_globetrotter_12345';
+    localStorage.setItem('globetrotter_token', token);
+  }
   return INITIAL_USER;
 };
 
@@ -161,6 +175,8 @@ export const getTrip = async (tripId) => {
   };
 };
 
+export const getTripById = getTrip;
+
 export const createTrip = async (tripData) => {
   if (!USE_MOCK) {
     const response = await apiClient.post('/trips', tripData);
@@ -203,10 +219,12 @@ export const updateTrip = async (tripId, tripData) => {
     const response = await apiClient.put(`/trips/${tripId}`, tripData);
     return response.data;
   }
-  await delay();
+  await delay(50);
   const trips = getStoredTrips();
-  const index = trips.findIndex((t) => t.id === tripId);
-  if (index === -1) throw new Error('Trip not found');
+  const index = trips.findIndex((t) => String(t.id) === String(tripId));
+  if (index === -1) {
+    return { id: tripId, ...tripData };
+  }
   
   trips[index] = { 
     ...trips[index], 
@@ -319,18 +337,22 @@ export const updateTripStop = async (stopId, stopData) => {
 
 export const deleteTripStop = async (tripId, stopId) => {
   if (!USE_MOCK) {
-    const response = await apiClient.delete(`/stops/${stopId}`);
+    const sId = stopId || tripId;
+    const response = await apiClient.delete(`/stops/${sId}`);
     return response.data;
   }
-  await delay();
+  await delay(50);
   const trips = getStoredTrips();
-  const trip = trips.find(t => t.id === tripId);
-  if (trip && trip.stops) {
-    trip.stops = trip.stops.filter(s => s.id !== stopId);
-    saveStoredTrips(trips);
-    return { success: true };
-  }
-  throw new Error('Trip or stop not found');
+  const targetStopId = String(stopId || tripId);
+
+  trips.forEach((t) => {
+    if (t.stops) {
+      t.stops = t.stops.filter((s) => String(s.id) !== targetStopId && String(s._id) !== targetStopId);
+    }
+  });
+
+  saveStoredTrips(trips);
+  return { success: true };
 };
 
 // =================== ACTIVITIES SERVICES ===================

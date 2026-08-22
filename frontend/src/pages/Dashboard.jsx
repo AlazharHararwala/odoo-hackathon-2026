@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTrips, getCities, createShareLink } from '../services/api';
+import { getTrips, getCities, createShareLink, deleteTrip } from '../services/api';
 import TripCard from '../components/TripCard';
 import ConfirmModal from '../components/ConfirmModal';
 import { useToast } from '../context/ToastContext';
@@ -45,6 +45,19 @@ const Dashboard = () => {
       showToast('Error loading dashboard data', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirmDeleteTrip = async () => {
+    if (!deletingTripId) return;
+    try {
+      await deleteTrip(deletingTripId);
+      setTrips(trips.filter((t) => t.id !== deletingTripId));
+      showToast('Trip deleted successfully', 'info');
+    } catch (err) {
+      showToast('Failed to delete trip', 'error');
+    } finally {
+      setDeletingTripId(null);
     }
   };
 
@@ -277,6 +290,17 @@ const Dashboard = () => {
           ))}
         </div>
       </div>
+
+      {/* Confirm Delete Trip Modal */}
+      <ConfirmModal
+        isOpen={!!deletingTripId}
+        title="Delete Trip"
+        message="Are you sure you want to delete this trip itinerary? This action cannot be undone."
+        confirmText="Delete Trip"
+        confirmVariant="danger"
+        onConfirm={handleConfirmDeleteTrip}
+        onClose={() => setDeletingTripId(null)}
+      />
     </div>
   );
 };

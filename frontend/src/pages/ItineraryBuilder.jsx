@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   getTrip, 
   updateTrip, 
+  deleteTrip,
   deleteTripStop, 
   addTripActivity, 
   deleteTripActivity,
@@ -209,6 +210,19 @@ const ItineraryBuilder = () => {
   const [availableCities, setAvailableCities] = useState([]);
   const [selectedNewCityId, setSelectedNewCityId] = useState('');
   const [deletingStopId, setDeletingStopId] = useState(null);
+  const [showDeleteTripModal, setShowDeleteTripModal] = useState(false);
+
+  const handleConfirmDeleteTrip = async () => {
+    try {
+      await deleteTrip(trip.id);
+      showToast('Trip deleted successfully', 'info');
+      navigate('/trips');
+    } catch (err) {
+      showToast('Failed to delete trip', 'error');
+    } finally {
+      setShowDeleteTripModal(false);
+    }
+  };
 
   // DND Kit Sensors
   const sensors = useSensors(
@@ -463,6 +477,15 @@ const ItineraryBuilder = () => {
               <Share2 className="w-4 h-4" />
               <span>Share Trip</span>
             </button>
+
+            <button
+              onClick={() => setShowDeleteTripModal(true)}
+              className="px-4 py-2.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center space-x-1.5 transition-colors border border-rose-500/40"
+              title="Delete trip permanently"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete Trip</span>
+            </button>
           </div>
         </div>
 
@@ -619,6 +642,17 @@ const ItineraryBuilder = () => {
         title="Remove City Stop"
         message="Are you sure you want to remove this city stop and its scheduled activities from your itinerary?"
         confirmText="Remove Stop"
+        isDanger={true}
+      />
+
+      {/* Delete Entire Trip Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteTripModal}
+        onClose={() => setShowDeleteTripModal(false)}
+        onConfirm={handleConfirmDeleteTrip}
+        title="Delete Trip"
+        message={`Are you sure you want to delete "${trip?.name}"? This action cannot be undone.`}
+        confirmText="Delete Trip"
         isDanger={true}
       />
     </div>

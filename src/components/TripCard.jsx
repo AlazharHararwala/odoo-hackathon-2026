@@ -13,7 +13,7 @@ import {
 import { createShareLink } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
-const TripCard = ({ trip, onDeleteClick }) => {
+const TripCard = ({ trip, onDelete, onDeleteClick }) => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -147,11 +147,12 @@ const TripCard = ({ trip, onDeleteClick }) => {
               <Share2 className="w-4 h-4" />
             </button>
 
-            {onDeleteClick && (
+            {(onDelete || onDeleteClick) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDeleteClick(trip.id);
+                  const fn = onDelete || onDeleteClick;
+                  fn(trip.id);
                 }}
                 className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
                 title="Delete Trip"

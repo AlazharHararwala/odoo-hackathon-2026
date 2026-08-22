@@ -80,6 +80,7 @@ const SortableCityStop = ({
   onDeleteActivity,
   onEditActivity,
   onUpdateStopCost,
+  onUpdateActivityParticipants,
   isOverBudget = false
 }) => {
   const { t, formatPrice, currencySymbol } = useLanguage();
@@ -98,7 +99,7 @@ const SortableCityStop = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const stopTotal = (stop.activities || []).reduce((acc, act) => acc + (act.cost || 0), 0) + (Number(stop.accommodationCost) || 0) + (Number(stop.transportCost) || 0);
+  const stopTotal = (stop.activities || []).reduce((acc, act) => acc + (act.cost || 0) * (act.participantCount || 1), 0) + (Number(stop.accommodationCost) || 0) + (Number(stop.transportCost) || 0);
 
   const getCategoryBadgeClass = (category) => {
     switch (category?.toLowerCase()) {

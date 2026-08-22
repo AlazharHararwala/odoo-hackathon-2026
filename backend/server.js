@@ -378,6 +378,15 @@ app.put('/api/trips/:id', async (req, res) => {
       ]
     );
 
+    if (tripData.stops && Array.isArray(tripData.stops)) {
+      for (let i = 0; i < tripData.stops.length; i++) {
+        const s = tripData.stops[i];
+        if (s.id) {
+          await pool.query('UPDATE trip_stops SET stop_order = ? WHERE id = ?', [i + 1, s.id]);
+        }
+      }
+    }
+
     const updatedTrip = await getFullTripDetails(tripId);
     res.json(updatedTrip);
   } catch (error) {

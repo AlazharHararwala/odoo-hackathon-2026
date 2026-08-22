@@ -1,107 +1,137 @@
-# GlobeTrotter — Multi-City Travel Planner (Frontend Client)
+# 🏛️ Odyssey — Intelligent Multi-City Travel Planner
 
-GlobeTrotter is a modern, high-performance travel-planning React web application designed for hackathons and production use. It empowers travelers to create personalized multi-city itineraries, customize city stops and daily activities, visualize trip budgets with interactive charts, and share or copy travel plans.
+> **Odyssey** is a modern, high-performance full-stack travel-planning web application built for multi-city itinerary planning, budget tracking, and real-time route customization. Powered by a **React 18** frontend and an **Express.js + MySQL** backend server.
 
 ---
 
-## 🚀 Quick Start
+## 🌟 Key Features & Capabilities
 
-### Installation & Development Server
+### 📍 1. Interactive Multi-City Itinerary Builder
+- **Drag-and-Drop Route Reordering**: Reorder city stops on the fly using `@dnd-kit/sortable`. New stop sequences automatically save and persist in MySQL database.
+- **Custom City Stop Management**: Add custom city stops, adjust start/end dates, and manage stop subtotals live.
 
-1. **Install Dependencies**:
+### 🏨 & ✈️ 2. User-Editable Stop Expenses & Logistics
+- **Accommodation & Travelling Costs**: Explicit input fields for **Accommodation Cost (₹)** and **Travelling / Transit Cost (₹)** on every city stop card and during trip creation.
+- **Live Real-Time Financial Subtotals**: Immediate recalculation of stop subtotals, whole-trip estimated costs, and budget status indicators.
+
+### 🎯 3. Discover & Custom Activity Management
+- **Already Selected Indicators**: Activities already added to a city stop display a green `✓ Already Added` check pill in the discovery drawer to prevent duplicate additions.
+- **+ Custom Activity Creator**: Create custom activities with custom names, categories (*Sightseeing, Food & Dining, Culture, Adventure, Shopping*), costs per person, and default times.
+- **👥 Participant / Person Counter**: Incremental (`-` / `+`) participant counter per activity (`👥 2 People`), dynamically multiplying activity cost (`cost × participantCount`) and persisting in MySQL.
+
+### 📊 4. Financial Analytics & Budget Tracking
+- **Interactive Budget Visualization**: Recharts donut charts and stacked bar charts illustrating expense breakdowns across stay, transit, and activities.
+- **Budget Warning & Savings Tips**: Real-time alerts when trip estimates exceed target budget goals with automated savings recommendations.
+
+### 📅 5. Day-by-Day Visual Timeline
+- **Chronological Itinerary Schedule**: Comprehensive timeline view detailing stop dates, times, and scheduled experiences across every destination.
+
+### 🔗 6. Public Trip Sharing & Cloning
+- **Shareable Unique URLs**: Generate public sharing links (`/shared/:shareId`) for friends and collaborators.
+- **One-Click Trip Copying**: Visitors can clone shared itineraries directly into their own Odyssey accounts.
+
+---
+
+## 🛠️ Tech Stack Architecture
+
+### 🌐 **Frontend Client**
+- **Framework**: **React 18** (Functional components & Custom Hooks)
+- **Build Tool**: **Vite 5** (Ultra-fast HMR and production bundle optimization)
+- **Styling**: **Tailwind CSS v3** + **PostCSS** + **Autoprefixer**
+- **Routing**: **React Router v6** (Declarative SPA routing)
+- **Drag & Drop**: **@dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`)
+- **Data Visualization**: **Recharts** (Interactive pie and bar charts)
+- **Icons**: **Lucide React**
+- **HTTP Client**: **Axios**
+
+### ⚡ **Backend Server**
+- **Runtime Environment**: **Node.js** (ES Modules)
+- **Framework**: **Express.js v5** (RESTful API architecture)
+- **Database Driver**: **mysql2** (Connection pooling & async query execution)
+- **Authentication & Security**: **JSON Web Tokens (JWT)** (`jsonwebtoken`) + **Bcrypt.js** (`bcryptjs`) password hashing
+- **Environment Management**: **dotenv**
+
+### 🗄️ **Database Storage**
+- **Database Management System**: **MySQL 8.0**
+- **Schema Tables**:
+  - `users` — User credentials, profiles, and authentication roles.
+  - `trips` — Trip details, start/end dates, total days, target/estimated budget, travelers count, and share tokens.
+  - `trip_stops` — City stop sequences (`stop_order`), city names, stay costs (`accommodation_cost`), and transit costs (`transport_cost`).
+  - `trip_activities` — Activity items, costs, scheduled times, categories, custom status (`is_custom`), and participant counts (`participant_count`).
+  - `destinations` & `activities` — Global discovery catalog.
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- **Node.js** (v18.x or higher)
+- **MySQL Database Server** (v8.0 or higher) running locally or remotely
+
+### 1. Database Configuration
+Ensure MySQL is running and update credentials in `.env` (or environment variables):
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=odoo_hackathon
+JWT_SECRET=your_jwt_secret_key
+PORT=5000
+```
+
+### 2. Installation
+Install frontend and backend dependencies:
+```bash
+npm install
+```
+
+### 3. Running the Project
+
+#### Option A: Start Both Backend & Frontend Servers
+1. **Start Express MySQL Backend Server**:
    ```bash
-   npm install
+   npm run server
+   # Runs on http://localhost:5000
    ```
 
-2. **Start Vite Development Server**:
+2. **Start Vite React Frontend Client**:
    ```bash
    npm run dev
+   # Runs on http://localhost:3000
    ```
 
-3. Open `http://localhost:3000` in your browser.
-
----
-
-## 🛠️ Technology Stack
-
-- **React 18** (Functional components with Hooks)
-- **Vite** (Ultra-fast HMR build tool)
-- **Tailwind CSS** (Custom theme palette with responsive utilities)
-- **React Router v6** (Declarative client routing & protected views)
-- **Recharts** (Interactive pie and bar charts for budget analytics)
-- **@dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` for smooth drag-and-drop city reordering)
-- **Lucide React** (Modern SVG iconography)
-- **Axios** (REST API service integration client)
-
----
-
-## 📂 Project Architecture
-
-```text
-frontend/
-├── src/
-│   ├── components/       # Reusable UI components (Navbar, Sidebar, TripCard, ActivitySearchModal, ConfirmModal)
-│   ├── context/          # State management (AuthContext, ToastContext)
-│   ├── data/             # Rich mock dataset (16 Cities, 40+ Activities, Demo User, Multi-city Trips)
-│   ├── layouts/          # MainLayout (Dashboard shell) & AuthLayout
-│   ├── pages/            # Login, Signup, ForgotPassword, Dashboard, CreateTrip, MyTrips,
-│   │                     # CityExplorer, ItineraryBuilder, ItineraryView, BudgetPage, TimelinePage,
-│   │                     # SharedTrip, ProfileSettings
-│   ├── services/         # Centralized API service layer (api.js)
-│   ├── App.jsx           # Application Router configuration
-│   ├── main.jsx          # Entry point
-│   └── index.css         # Tailwind CSS directives & custom styles
-├── index.html            # Base HTML document
-├── package.json          # Dependencies & scripts
-├── tailwind.config.js    # Tailwind theme configuration
-└── vite.config.js        # Vite build setup
+#### Option B: Production Build
+```bash
+npm run build
 ```
 
 ---
 
-## 🔌 Flask REST API Integration
+## 🔌 API Endpoint Reference
 
-The frontend client is structured with a centralized service layer (`src/services/api.js`).
-
-### How to Connect to Real Flask Backend:
-In `src/services/api.js`, simply toggle the `USE_MOCK` flag to `false`:
-
-```javascript
-// src/services/api.js
-const USE_MOCK = false;
-const API_BASE_URL = 'http://localhost:5000/api';
-```
-
-### Supported API Endpoint Contracts:
-- `POST /api/auth/login`
-- `POST /api/auth/register`
-- `GET /api/auth/me`
-- `GET /api/trips`
-- `POST /api/trips`
-- `GET /api/trips/:id`
-- `PUT /api/trips/:id`
-- `DELETE /api/trips/:id`
-- `GET /api/cities`
-- `GET /api/cities/:id`
-- `POST /api/trips/:id/stops`
-- `PUT /api/stops/:id`
-- `DELETE /api/stops/:id`
-- `GET /api/activities`
-- `POST /api/trips/:id/activities`
-- `DELETE /api/trip-activities/:id`
-- `GET /api/trips/:id/budget`
-- `GET /api/trips/:id/timeline`
-- `POST /api/trips/:id/share`
-- `GET /api/shared/:shareId`
-- `POST /api/shared/:shareId/copy`
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Register a new user account |
+| `POST` | `/api/auth/login` | Authenticate user & return JWT token |
+| `GET` | `/api/auth/me` | Fetch authenticated user profile |
+| `GET` | `/api/trips` | Retrieve all user trips |
+| `POST` | `/api/trips` | Create a new trip with stops & activities |
+| `GET` | `/api/trips/:id` | Fetch full details for a specific trip |
+| `PUT` | `/api/trips/:id` | Update trip metadata or stop ordering |
+| `DELETE` | `/api/trips/:id` | Delete a trip |
+| `POST` | `/api/trips/:id/stops` | Add a new city stop to a trip |
+| `PUT` | `/api/stops/:id` | Update stop dates, stay cost, or travel cost |
+| `DELETE` | `/api/stops/:id` | Remove a city stop |
+| `GET` | `/api/activities` | Search & filter global activities catalog |
+| `POST` | `/api/trips/:id/activities` | Add an activity (catalog or custom) to a stop |
+| `PUT` | `/api/activities/:id` | Update activity details, time, or participant count |
+| `DELETE` | `/api/activities/:id` | Remove an activity from a stop |
+| `GET` | `/api/trips/:id/timeline` | Fetch chronological trip timeline |
+| `GET` | `/api/shared/:shareId` | Get public shared trip view |
+| `POST` | `/api/shared/:shareId/copy` | Clone shared trip into user account |
 
 ---
 
-## 🌟 Key Application Features
-
-1. **Dashboard**: Personal welcome, financial summary widgets, next upcoming trip, quick actions, popular destinations.
-2. **Multi-Step Trip Creator**: 4-step wizard collecting details, city destinations, starting activities, and budget goals.
-3. **Interactive Itinerary Builder**: Drag-and-drop city stop reordering using `@dnd-kit`, activity search & filter drawer, real-time budget limit tracker.
-4. **Budget Analytics**: Interactive Recharts donut chart for category expense breakdown (Transport, Accommodation, Activities, Meals) and stacked bar chart for per-city costs.
-5. **Visual Timeline & Schedule**: Day-by-day chronological view with expandable stops and activity time badges.
-6. **Public Sharing & Copying**: Read-only `/shared/:shareId` public view allowing users to clone shared trips directly into their accounts.
+## 📜 License
+This project is developed for hackathons and demonstration purposes. All rights reserved.

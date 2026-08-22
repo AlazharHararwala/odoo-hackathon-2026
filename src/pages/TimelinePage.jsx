@@ -103,26 +103,45 @@ const TimelinePage = () => {
 
       {loading ? (
         <div className="py-20 text-center space-y-4">
-          <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-slate-600">Building visual timeline...</p>
+          <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-bold text-slate-600">Loading timeline schedule...</p>
         </div>
-      ) : trips.length === 0 || !timelineData ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 space-y-4 shadow-xs">
-          <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mx-auto shadow-inner">
-            <Compass className="w-8 h-8" />
+      ) : trips.length === 0 ? (
+        <div className="bg-white rounded-3xl p-10 md:p-12 text-center border border-dashed border-slate-300 space-y-4 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+            <Compass className="w-7 h-7" />
           </div>
-          <div className="space-y-1 max-w-sm mx-auto">
-            <h3 className="font-extrabold text-base text-slate-900">No trips planned yet</h3>
-            <p className="text-xs text-slate-500">
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="font-extrabold text-base text-slate-900">No trips created yet 🗺️</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
               Create your first multi-city trip to view its day-by-day chronological schedule and itinerary timeline.
             </p>
           </div>
           <button
             onClick={() => navigate('/create-trip')}
-            className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-600/20 transition-all hover:scale-105 inline-flex items-center space-x-1.5 cursor-pointer"
+            className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl text-xs font-bold shadow-md transition-all inline-flex items-center space-x-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Plan a Trip</span>
+            <span>Plan Your First Trip</span>
+          </button>
+        </div>
+      ) : (!timelineData || !timelineData.timelineDays || timelineData.timelineDays.length === 0) ? (
+        <div className="bg-gradient-to-b from-amber-50/50 to-orange-50/20 rounded-3xl p-10 text-center border border-amber-200/80 space-y-4 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-600 flex items-center justify-center mx-auto shadow-sm">
+            <CalendarIcon className="w-7 h-7 text-amber-500" />
+          </div>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="font-extrabold text-base text-slate-900">No destination stops added yet</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              This trip is created, but no city stops have been added to the schedule. Add cities and activities to populate your visual timeline!
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(`/itinerary-builder/${selectedTripId}`)}
+            className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl text-xs font-bold shadow-md transition-all inline-flex items-center space-x-1.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Cities & Activities</span>
           </button>
         </div>
       ) : (

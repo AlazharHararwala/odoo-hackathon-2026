@@ -110,7 +110,7 @@ const SharedTrip = () => {
             </div>
           </div>
           <div>
-            <span className="text-lg font-extrabold text-white tracking-tight">GlobeTrotter</span>
+            <span className="text-lg font-extrabold text-white tracking-tight">Odyssey</span>
             <span className="block text-[9px] uppercase tracking-widest text-emerald-400 font-extrabold">Shared Travel Itinerary</span>
           </div>
         </Link>

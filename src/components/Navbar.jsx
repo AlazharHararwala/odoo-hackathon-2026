@@ -80,7 +80,7 @@ const Navbar = ({ onOpenMobileSidebar }) => {
         <div className="flex items-center space-x-3">
           <Link
             to="/create-trip"
-            className="hidden sm:inline-flex items-center space-x-1.5 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-900/10 transition-all hover:scale-105"
+            className="hidden sm:inline-flex items-center space-x-1.5 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-900/10"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{t('newTrip', 'New Trip')}</span>

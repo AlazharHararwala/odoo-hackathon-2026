@@ -228,6 +228,31 @@ app.get('/api/trips/:id', async (req, res) => {
   }
 });
 
+app.get('/api/trips/:id/timeline', async (req, res) => {
+  try {
+    const trip = await getFullTripDetails(req.params.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    const timelineDays = (trip.stops || []).map((stop, idx) => ({
+      dayNumber: idx + 1,
+      date: stop.startDate || trip.startDate,
+      cityName: stop.cityName,
+      country: stop.country,
+      stopId: stop.id,
+      events: stop.activities || [],
+    }));
+
+    res.json({
+      tripId: trip.id,
+      tripName: trip.name,
+      timelineDays,
+    });
+  } catch (error) {
+    console.error('Timeline fetch error:', error);
+    res.status(500).json({ message: 'Failed to fetch trip timeline' });
+  }
+});
+
 app.post('/api/trips', async (req, res) => {
   try {
     const tripData = req.body;

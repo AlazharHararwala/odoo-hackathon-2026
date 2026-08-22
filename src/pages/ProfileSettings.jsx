@@ -418,15 +418,16 @@ const ProfileSettings = () => {
             <ShieldAlert className="w-6 h-6" />
             <h3 className="font-bold text-lg text-slate-900">Danger Zone</h3>
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Permanently delete your GlobeTrotter account and erase all your stored multi-city itineraries, custom activities, and budget history. This action cannot be reversed.
+          <p className="text-xs text-rose-600 leading-relaxed mb-4">
+            Permanently delete your Odyssey account and erase all your stored multi-city itineraries, custom activities, and budget history. This action cannot be reversed.
           </p>
           <div className="pt-2">
             <button
+              type="button"
               onClick={() => setShowDeleteModal(true)}
-              className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-600/20"
+              className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-600/20 transition-all cursor-pointer"
             >
-              Delete GlobeTrotter Account
+              Delete Odyssey Account
             </button>
           </div>
         </div>
@@ -437,8 +438,8 @@ const ProfileSettings = () => {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDeleteAccount}
-        title="Delete Account Permanently"
-        message="Are you sure you want to permanently delete your GlobeTrotter account? All your saved trips and itinerary data will be destroyed."
+        title="Delete Account"
+        message="Are you sure you want to permanently delete your Odyssey account? All your saved trips and itinerary data will be destroyed."
         confirmText="Permanently Delete"
         isDanger={true}
       />

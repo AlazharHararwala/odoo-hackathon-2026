@@ -26,7 +26,7 @@ const AuthLayout = () => {
               </div>
             </div>
             <div>
-              <span className="text-2xl font-extrabold text-white tracking-tight">GlobeTrotter</span>
+              <span className="text-2xl font-extrabold text-white tracking-tight">Odyssey</span>
               <span className="block text-xs uppercase tracking-widest text-emerald-400 font-extrabold">Multi-City Travel Planner</span>
             </div>
           </Link>

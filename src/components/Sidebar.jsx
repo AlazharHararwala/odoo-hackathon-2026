@@ -35,14 +35,14 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
       {/* Brand Header */}
       <div className="p-5 flex items-center justify-between border-b border-slate-800">
         <NavLink to="/dashboard" className="flex items-center space-x-3 group">
-          <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-all duration-300">
+          <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 p-0.5 shadow-lg shadow-emerald-500/20">
             <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 via-transparent to-cyan-400/20" />
-              <Compass className="w-5 h-5 text-emerald-400 group-hover:rotate-45 transition-transform duration-500 relative z-10" />
+              <Compass className="w-5 h-5 text-emerald-400 relative z-10" />
             </div>
           </div>
           <div>
-            <span className="text-xl font-extrabold text-white tracking-tight">GlobeTrotter</span>
+            <span className="text-xl font-extrabold text-white tracking-tight">Odyssey</span>
             <span className="block text-[10px] uppercase tracking-widest text-emerald-400 font-extrabold">Travel Planner</span>
           </div>
         </NavLink>
@@ -102,7 +102,7 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
 
         <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2.5 border-t border-slate-800/80">
           <span className="flex items-center space-x-1.5 font-bold text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
             <span>{t('allSystemsLive', 'Explorer Ready')}</span>
           </span>
           <Link to="/settings" className="text-slate-400 hover:text-white font-semibold flex items-center space-x-1">

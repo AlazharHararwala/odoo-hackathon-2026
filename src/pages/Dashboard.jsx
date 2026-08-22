@@ -227,9 +227,9 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <button
           onClick={() => navigate('/create-trip')}
-          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-emerald-500 hover:shadow-md transition-all text-left group"
+          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-emerald-500 hover:shadow-md transition-colors text-left group"
         >
-          <div className="w-11 h-11 rounded-2xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center mb-3 shadow-xs">
             <Plus className="w-6 h-6" />
           </div>
           <h4 className="font-extrabold text-sm text-slate-900">Build New Trip</h4>
@@ -238,9 +238,9 @@ const Dashboard = () => {
 
         <button
           onClick={() => navigate('/explore')}
-          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-teal-500 hover:shadow-md transition-all text-left group"
+          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-teal-500 hover:shadow-md transition-colors text-left group"
         >
-          <div className="w-11 h-11 rounded-2xl bg-teal-100/70 text-teal-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+          <div className="w-11 h-11 rounded-2xl bg-teal-100/70 text-teal-600 flex items-center justify-center mb-3 shadow-xs">
             <Compass className="w-6 h-6" />
           </div>
           <h4 className="font-extrabold text-sm text-slate-900">Explore 900+ Cities</h4>
@@ -249,9 +249,9 @@ const Dashboard = () => {
 
         <button
           onClick={() => navigate('/timeline')}
-          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-amber-500 hover:shadow-md transition-all text-left group"
+          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-amber-500 hover:shadow-md transition-colors text-left group"
         >
-          <div className="w-11 h-11 rounded-2xl bg-amber-100/70 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+          <div className="w-11 h-11 rounded-2xl bg-amber-100/70 text-amber-600 flex items-center justify-center mb-3 shadow-xs">
             <Calendar className="w-6 h-6" />
           </div>
           <h4 className="font-extrabold text-sm text-slate-900">Visual Timeline</h4>
@@ -260,9 +260,9 @@ const Dashboard = () => {
 
         <button
           onClick={() => navigate('/budget')}
-          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-indigo-500 hover:shadow-md transition-all text-left group"
+          className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-indigo-500 hover:shadow-md transition-colors text-left group"
         >
-          <div className="w-11 h-11 rounded-2xl bg-indigo-100/70 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+          <div className="w-11 h-11 rounded-2xl bg-indigo-100/70 text-indigo-600 flex items-center justify-center mb-3 shadow-xs">
             <PieChart className="w-6 h-6" />
           </div>
           <h4 className="font-extrabold text-sm text-slate-900">Wallet & Budget</h4>
@@ -292,12 +292,12 @@ const Dashboard = () => {
         ) : trips.length === 0 ? (
           <div className="bg-gradient-to-b from-emerald-50/60 to-teal-50/30 border border-emerald-200/80 rounded-3xl p-10 md:p-12 text-center space-y-4 shadow-sm">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
-              <Compass className="w-8 h-8 animate-spin-slow" />
+              <Compass className="w-8 h-8" />
             </div>
             <div className="max-w-md mx-auto space-y-1.5">
               <h3 className="text-lg font-extrabold text-slate-800">Your canvas is blank — let's paint a journey ✈️</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                No active trips planned yet. Pick your dream destinations and let GlobeTrotter structure your dates, routes, and custom activities.
+                No active trips planned yet. Pick your dream destinations and let Odyssey structure your dates, routes, and custom activities.
               </p>
             </div>
             <button

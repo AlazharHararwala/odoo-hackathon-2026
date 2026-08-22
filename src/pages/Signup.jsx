@@ -33,7 +33,7 @@ const Signup = () => {
     setLoading(true);
     try {
       await signupUser({ fullName, email, password });
-      showToast('Account created successfully! Welcome to GlobeTrotter.', 'success');
+      showToast('Account created successfully! Welcome to Odyssey.', 'success');
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Registration failed. Try again.');

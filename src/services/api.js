@@ -161,6 +161,14 @@ export const createTrip = async (tripData) => {
   await delay();
   const trips = getStoredTrips();
   const calculatedStatus = calculateTripStatus(tripData.startDate, tripData.endDate, 'Planning');
+  let initialEstBudget = 0;
+  (tripData.stops || []).forEach((stop) => {
+    initialEstBudget += (Number(stop.accommodationCost) || 0) + (Number(stop.transportCost) || 0);
+    (stop.activities || []).forEach((act) => {
+      initialEstBudget += Number(act.cost) || 0;
+    });
+  });
+
   const newTrip = {
     id: `trip_${Date.now()}`,
     name: tripData.name || 'New Adventure',
@@ -171,7 +179,7 @@ export const createTrip = async (tripData) => {
     status: calculatedStatus,
     coverImage: tripData.coverImage || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
     targetBudget: Number(tripData.targetBudget) || 50000,
-    estimatedBudget: 0,
+    estimatedBudget: initialEstBudget,
     shareId: `sh_${Math.random().toString(36).substring(2, 9)}`,
     isPublic: true,
     createdUser: INITIAL_USER.name,

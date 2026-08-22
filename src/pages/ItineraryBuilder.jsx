@@ -84,42 +84,42 @@ const SortableCityStop = ({
       className={`bg-white rounded-3xl border ${isDragging ? 'border-primary-500 shadow-2xl' : 'border-slate-200/90'} shadow-sm transition-all overflow-hidden`}
     >
       {/* City Stop Drag Header */}
-      <div className="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-teal-900 via-emerald-900 to-slate-900 border-b border-teal-700/40 text-white p-4 sm:p-5 flex items-center justify-between shadow-md">
         <div className="flex items-center space-x-3">
           <button
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors"
+            className="cursor-grab active:cursor-grabbing p-2 hover:bg-white/10 text-teal-200 hover:text-white rounded-xl transition-colors"
             title="Drag to reorder city stop"
           >
             <GripVertical className="w-5 h-5" />
           </button>
-          <div className="w-9 h-9 rounded-xl bg-primary-600/30 border border-primary-500/40 flex items-center justify-center text-primary-400 font-bold">
-            <MapPin className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-white font-extrabold shadow-xs">
+            <MapPin className="w-5 h-5 text-teal-300" />
           </div>
           <div>
-            <h3 className="text-lg font-bold tracking-tight text-white flex items-center space-x-2">
+            <h3 className="text-lg font-black tracking-tight text-white flex items-center space-x-2">
               <span>📍 {stop.cityName}</span>
-              {stop.country && <span className="text-xs font-normal text-slate-400">({stop.country})</span>}
+              {stop.country && <span className="text-xs font-semibold text-teal-200/80">({stop.country})</span>}
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-teal-100/90 font-medium">
               {stop.startDate} – {stop.endDate}
             </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3">
-          <div className="text-right hidden sm:block">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Stop Subtotal</span>
-            <span className="text-xs font-bold text-teal-400 flex items-center justify-end">
-              <IndianRupee className="w-3 h-3" />
+          <div className="text-right hidden sm:block bg-black/25 px-3 py-1.5 rounded-xl border border-white/15">
+            <span className="text-[10px] text-teal-200 uppercase tracking-wider block font-semibold">Stop Subtotal</span>
+            <span className="text-xs font-extrabold text-white flex items-center justify-end">
+              <IndianRupee className="w-3.5 h-3.5 text-teal-300" />
               {stopTotal.toLocaleString('en-IN')}
             </span>
           </div>
 
           <button
             onClick={() => onRemoveStop(stop.id)}
-            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition-colors"
+            className="p-2 text-teal-200 hover:text-rose-300 hover:bg-rose-500/20 rounded-xl transition-colors"
             title="Remove city stop"
           >
             <Trash2 className="w-4 h-4" />

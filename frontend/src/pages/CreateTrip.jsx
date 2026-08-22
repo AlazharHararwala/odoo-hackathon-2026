@@ -25,7 +25,8 @@ import {
   Filter,
   Search,
   RotateCcw,
-  Building2
+  Building2,
+  Users
 } from 'lucide-react';
 
 const SPOT_PHOTOS = [
@@ -38,7 +39,7 @@ const SPOT_PHOTOS = [
   'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
   'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=400&q=80',
   'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1548625361-18585642d99d?auto=format&fit=crop&w=400&q=80',
 ];
 
 const CreateTrip = () => {
@@ -54,6 +55,8 @@ const CreateTrip = () => {
   const [startDate, setStartDate] = useState('2026-09-10');
   const [endDate, setEndDate] = useState('2026-09-20');
   const [targetBudget, setTargetBudget] = useState(75000);
+  const [adultsCount, setAdultsCount] = useState(2);
+  const [childrenCount, setChildrenCount] = useState(0);
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState(
     'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80'
@@ -395,6 +398,9 @@ const CreateTrip = () => {
         endDate,
         totalDays: calculateDays(),
         targetBudget: Number(targetBudget),
+        adultsCount: Number(adultsCount) || 1,
+        childrenCount: Number(childrenCount) || 0,
+        travelersCount: (Number(adultsCount) || 1) + (Number(childrenCount) || 0),
         coverImage,
         stops: stopsData,
       });
@@ -525,6 +531,111 @@ const CreateTrip = () => {
                   <Clock className="w-4 h-4" />
                   <span>{calculateDays()} Days Trip</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Separate Adults & Children Counters */}
+            <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200/90 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200/70 pb-3">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center font-bold">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold text-slate-900">
+                      Travelers & Group Composition
+                    </h3>
+                    <span className="text-[11px] text-slate-500">
+                      Specify adults and children to calculate individual & total group costs
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-xs font-black text-primary-700 bg-primary-50 px-2.5 py-1 rounded-xl border border-primary-200">
+                    Total: {adultsCount + childrenCount} {adultsCount + childrenCount === 1 ? 'Person' : 'People'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Adults Counter */}
+                <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block">Adults</span>
+                    <span className="text-[10px] text-slate-400">Age 18+ (Full Fare)</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setAdultsCount((prev) => Math.max(1, (Number(prev) || 1) - 1))}
+                      disabled={adultsCount <= 1}
+                      className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center text-xs font-black text-slate-900">{adultsCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setAdultsCount((prev) => (Number(prev) || 1) + 1)}
+                      className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Children Counter */}
+                <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block">Children</span>
+                    <span className="text-[10px] text-slate-400">Age 0–17 (Discounted / Half Fare)</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setChildrenCount((prev) => Math.max(0, (Number(prev) || 0) - 1))}
+                      disabled={childrenCount <= 0}
+                      className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center text-xs font-black text-slate-900">{childrenCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setChildrenCount((prev) => (Number(prev) || 0) + 1)}
+                      className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="flex flex-wrap gap-2 pt-1">
+                {[
+                  { adults: 1, children: 0, label: 'Solo (1 Adult)' },
+                  { adults: 2, children: 0, label: 'Couple (2 Adults)' },
+                  { adults: 2, children: 2, label: 'Family (2 Adults, 2 Kids)' },
+                  { adults: 4, children: 0, label: 'Group (4 Adults)' },
+                ].map((preset, pIdx) => (
+                  <button
+                    key={pIdx}
+                    type="button"
+                    onClick={() => {
+                      setAdultsCount(preset.adults);
+                      setChildrenCount(preset.children);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      adultsCount === preset.adults && childrenCount === preset.children
+                        ? 'bg-primary-600 text-white shadow-xs'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-100/60'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -939,9 +1050,19 @@ const CreateTrip = () => {
 
           <div className="space-y-4">
             <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3">
-              <span className="text-xs font-bold text-teal-400 block uppercase tracking-wider">
-                {calculateDays()} Days Multi-City Trip
-              </span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-bold text-teal-400 block uppercase tracking-wider">
+                  {calculateDays()} Days Multi-City Trip
+                </span>
+                <span className="text-xs font-extrabold bg-primary-500/30 border border-primary-400/40 text-primary-300 px-3 py-1 rounded-full flex items-center space-x-1.5">
+                  <Users className="w-3.5 h-3.5 mr-1" />
+                  <span>
+                    {adultsCount} {adultsCount === 1 ? 'Adult' : 'Adults'}
+                    {childrenCount > 0 ? `, ${childrenCount} ${childrenCount === 1 ? 'Child' : 'Children'}` : ''}
+                    {' '}({adultsCount + childrenCount} Total)
+                  </span>
+                </span>
+              </div>
               <h3 className="text-xl font-black">{tripName || `Trip to ${selectedStops.map((s) => s.cityName).join(', ')}`}</h3>
               <p className="text-xs text-slate-300">{description || 'Personalized travel itinerary.'}</p>
               <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs font-semibold">

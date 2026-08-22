@@ -80,9 +80,14 @@ const getStoredTrips = () => {
       return acc + actSum + (stop.accommodationCost || 0) + (stop.transportCost || 0);
     }, 0);
 
+    const adults = Number(trip.adultsCount) || Number(trip.travelersCount) || 1;
+    const children = Number(trip.childrenCount) || 0;
     return {
       ...trip,
       stops: fixedStops,
+      adultsCount: adults,
+      childrenCount: children,
+      travelersCount: adults + children,
       estimatedBudget: calculatedEst > 0 ? calculatedEst : (trip.estimatedBudget || 45000),
       status: calculateTripStatus(trip.startDate, trip.endDate, trip.status),
     };
@@ -99,6 +104,22 @@ const delay = (ms = 250) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // =================== AUTHENTICATION SERVICES ===================
 
+export const getStoredUser = () => {
+  const stored = localStorage.getItem('globetrotter_user');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing stored user:', e);
+    }
+  }
+  return INITIAL_USER;
+};
+
+export const saveStoredUser = (user) => {
+  localStorage.setItem('globetrotter_user', JSON.stringify(user));
+};
+
 export const login = async (credentials) => {
   if (!USE_MOCK) {
     const response = await apiClient.post('/auth/login', credentials);
@@ -108,7 +129,8 @@ export const login = async (credentials) => {
   if (credentials.email && credentials.password) {
     const mockToken = 'mock_jwt_token_globetrotter_12345';
     localStorage.setItem('globetrotter_token', mockToken);
-    return { token: mockToken, user: INITIAL_USER };
+    const user = getStoredUser();
+    return { token: mockToken, user };
   }
   throw new Error('Invalid email or password credentials');
 };
@@ -125,6 +147,7 @@ export const signup = async (userData) => {
     name: userData.fullName || userData.name || 'New Traveler',
     email: userData.email,
   };
+  saveStoredUser(newUser);
   const mockToken = `mock_jwt_token_${Date.now()}`;
   localStorage.setItem('globetrotter_token', mockToken);
   return { token: mockToken, user: newUser };
@@ -141,7 +164,7 @@ export const getCurrentUser = async () => {
     token = 'mock_jwt_token_globetrotter_12345';
     localStorage.setItem('globetrotter_token', token);
   }
-  return INITIAL_USER;
+  return getStoredUser();
 };
 
 // =================== TRIPS SERVICES ===================
@@ -212,6 +235,9 @@ export const createTrip = async (tripData) => {
     })),
   }));
 
+  const adults = Number(tripData.adultsCount) || Number(tripData.travelersCount) || 1;
+  const children = Number(tripData.childrenCount) || 0;
+
   const newTrip = {
     id: `trip_${Date.now()}`,
     name: tripData.name || 'New Adventure',
@@ -222,6 +248,9 @@ export const createTrip = async (tripData) => {
     status: calculatedStatus,
     coverImage: tripData.coverImage || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
     targetBudget: Number(tripData.targetBudget) || 50000,
+    adultsCount: adults,
+    childrenCount: children,
+    travelersCount: adults + children,
     estimatedBudget: initialEstBudget,
     shareId: `sh_${Math.random().toString(36).substring(2, 9)}`,
     isPublic: true,
@@ -245,9 +274,18 @@ export const updateTrip = async (tripId, tripData) => {
     return { id: tripId, ...tripData };
   }
   
+  const currentAdults = trips[index].adultsCount !== undefined ? trips[index].adultsCount : (trips[index].travelersCount || 1);
+  const currentChildren = trips[index].childrenCount !== undefined ? trips[index].childrenCount : 0;
+
+  const updatedAdults = tripData.adultsCount !== undefined ? Number(tripData.adultsCount) : currentAdults;
+  const updatedChildren = tripData.childrenCount !== undefined ? Number(tripData.childrenCount) : currentChildren;
+
   trips[index] = { 
     ...trips[index], 
     ...tripData,
+    adultsCount: updatedAdults,
+    childrenCount: updatedChildren,
+    travelersCount: updatedAdults + updatedChildren,
     status: calculateTripStatus(
       tripData.startDate || trips[index].startDate,
       tripData.endDate || trips[index].endDate,

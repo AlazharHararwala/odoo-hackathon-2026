@@ -16,7 +16,8 @@ import {
   Utensils,
   Sparkles,
   Lightbulb,
-  ArrowRight
+  ArrowRight,
+  Users
 } from 'lucide-react';
 import { 
   PieChart, 
@@ -129,7 +130,9 @@ const BudgetPage = () => {
               className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             >
               {trips.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.adultsCount || 1}A{(t.childrenCount || 0) > 0 ? ` + ${t.childrenCount}C` : ''})
+                </option>
               ))}
             </select>
           </div>
@@ -166,11 +169,24 @@ const BudgetPage = () => {
           {/* Key Metric Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
-              <span className="text-xs font-medium text-slate-500">Total Estimated Cost</span>
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+                <span>Whole Trip Group Cost</span>
+                <span className="text-[10px] font-bold text-slate-400">
+                  {selectedTrip.adultsCount || 1}A{(selectedTrip.childrenCount || 0) > 0 ? ` + ${selectedTrip.childrenCount}C` : ''}
+                </span>
+              </div>
               <h3 className="text-2xl font-black text-slate-900 mt-1">
                 {formatPrice(budgetData.total)}
               </h3>
-              <span className="text-[10px] text-slate-400 mt-1 block">Sum of all stops & activities</span>
+              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Sum of all stops</span>
+                {((selectedTrip?.adultsCount || 1) + (selectedTrip?.childrenCount || 0)) > 1 && (
+                  <span className="font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 flex items-center">
+                    <Users className="w-2.5 h-2.5 mr-0.5" />
+                    {formatPrice(Math.round(budgetData.total / ((selectedTrip.adultsCount || 1) + (selectedTrip.childrenCount || 0))))}/person
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">

@@ -13,7 +13,8 @@ import {
   List, 
   Calendar as CalendarIcon, 
   Clock, 
-  CheckCircle2 
+  CheckCircle2,
+  Users
 } from 'lucide-react';
 
 const ItineraryView = () => {
@@ -147,9 +148,22 @@ const ItineraryView = () => {
               <MapPin className="w-4 h-4 mr-1.5 text-teal-400" />
               {trip.stops?.length || 0} Cities Route
             </span>
-            <span className="flex items-center font-bold text-amber-400 text-sm">
-              {formatPrice(trip.estimatedBudget || 0)} Est. Total
+            <span className="flex items-center font-semibold text-purple-300">
+              <Users className="w-4 h-4 mr-1.5" />
+              {trip.adultsCount || 1} {(trip.adultsCount || 1) === 1 ? 'Adult' : 'Adults'}
+              {(trip.childrenCount || 0) > 0 ? `, ${trip.childrenCount} ${(trip.childrenCount || 0) === 1 ? 'Child' : 'Children'}` : ''}
+              {' '}({(trip.adultsCount || 1) + (trip.childrenCount || 0)} Total)
             </span>
+            <div className="flex items-baseline space-x-2">
+              <span className="flex items-center font-bold text-amber-400 text-sm" title="Group Total Cost">
+                {formatPrice(trip.estimatedBudget || 0)} Group Total
+              </span>
+              {((trip.adultsCount || 1) + (trip.childrenCount || 0)) > 1 && (
+                <span className="text-[11px] text-teal-300 font-semibold">
+                  ({formatPrice(Math.round((trip.estimatedBudget || 0) / ((trip.adultsCount || 1) + (trip.childrenCount || 0))))} / person)
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

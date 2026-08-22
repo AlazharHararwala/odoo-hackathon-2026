@@ -16,6 +16,19 @@ import {
   Star
 } from 'lucide-react';
 
+const SPOT_PHOTOS = [
+  'https://images.unsplash.com/photo-1584003564911-a7a321c84e1c?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=400&q=80',
+];
+
 const CreateTrip = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -37,7 +50,7 @@ const CreateTrip = () => {
   const [allCities, setAllCities] = useState([]);
   const [selectedStops, setSelectedStops] = useState([]);
 
-  // Step 3: Specific City Activities Map (cityId -> array of selected activities)
+  // Step 3: Specific City Activities Map
   const [cityActivitiesMap, setCityActivitiesMap] = useState({});
 
   useEffect(() => {
@@ -48,7 +61,6 @@ const CreateTrip = () => {
     try {
       const data = await getCities();
       setAllCities(data);
-      // Pre-select 3 default popular stops: Mumbai, Dubai, Paris
       const initialStops = data.filter((c) => ['c_mumbai', 'c_dubai', 'c_paris'].includes(c.id));
       setSelectedStops(
         initialStops.map((c, idx) => ({
@@ -66,7 +78,6 @@ const CreateTrip = () => {
     }
   };
 
-  // When step 3 is reached or selectedStops changes, fetch specific activities for each selected city
   useEffect(() => {
     if (selectedStops.length > 0) {
       loadSpecificActivitiesForCities();
@@ -75,25 +86,29 @@ const CreateTrip = () => {
 
   const loadSpecificActivitiesForCities = async () => {
     const map = { ...cityActivitiesMap };
-    for (const stop of selectedStops) {
+    for (let sIdx = 0; sIdx < selectedStops.length; sIdx++) {
+      const stop = selectedStops[sIdx];
       if (!map[stop.cityId]) {
         try {
           const acts = await getActivities({ cityId: stop.cityId });
-          // If no specific mock activities found, fallback to generating distinct attractions from city metadata
           if (acts && acts.length > 0) {
-            map[stop.cityId] = acts.map((a) => ({ ...a, selected: true }));
+            map[stop.cityId] = acts.map((a, idx) => ({ 
+              ...a, 
+              selected: true,
+              image: a.image || SPOT_PHOTOS[(sIdx * 4 + idx) % SPOT_PHOTOS.length]
+            }));
           } else {
             const cityObj = allCities.find((c) => c.id === stop.cityId);
-            const attractions = cityObj?.attractions || ['City Sightseeing Walk', 'Local Cultural Tour', 'Traditional Culinary Tasting'];
+            const attractions = cityObj?.attractions || ['City Sightseeing Walk', 'Local Cultural Tour', 'Traditional Culinary Tasting', 'Park & Garden Experience'];
             map[stop.cityId] = attractions.map((attr, idx) => ({
               id: `act_${stop.cityId}_${idx}`,
               cityId: stop.cityId,
               name: attr,
-              category: idx % 2 === 0 ? 'Sightseeing' : 'Culture',
+              category: idx === 0 ? 'Sightseeing' : idx === 1 ? 'Culture' : idx === 2 ? 'Food' : 'Nature',
               cost: (idx + 1) * 600,
               time: idx === 0 ? '09:30' : idx === 1 ? '14:00' : '18:00',
               selected: true,
-              image: cityObj?.image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=400&q=80',
+              image: SPOT_PHOTOS[(sIdx * 4 + idx) % SPOT_PHOTOS.length],
             }));
           }
         } catch (e) {
@@ -151,6 +166,7 @@ const CreateTrip = () => {
           cost: a.cost || 0,
           category: a.category || 'Sightseeing',
           time: a.time || (aIdx === 0 ? '09:30' : aIdx === 1 ? '13:30' : '17:00'),
+          image: a.image,
         }));
 
       return {
@@ -456,7 +472,7 @@ const CreateTrip = () => {
                       >
                         <div className="flex items-center space-x-3 min-w-0">
                           {act.image && (
-                            <img src={act.image} alt={act.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                            <img src={act.image} alt={act.name} className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200" />
                           )}
                           <div className="min-w-0">
                             <h4 className="font-bold text-xs text-slate-900 line-clamp-1">{act.name}</h4>

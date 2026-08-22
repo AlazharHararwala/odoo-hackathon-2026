@@ -80,9 +80,10 @@ const SortableCityStop = ({
   onOpenActivityModal, 
   onDeleteActivity,
   onEditActivity,
+  onUpdateStopCost,
   isOverBudget = false
 }) => {
-  const { t, formatPrice } = useLanguage();
+  const { t, formatPrice, currencySymbol } = useLanguage();
   const {
     attributes,
     listeners,
@@ -98,7 +99,7 @@ const SortableCityStop = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const stopTotal = (stop.activities || []).reduce((acc, act) => acc + (act.cost || 0), 0) + (stop.accommodationCost || 0) + (stop.transportCost || 0);
+  const stopTotal = (stop.activities || []).reduce((acc, act) => acc + (act.cost || 0), 0) + (Number(stop.accommodationCost) || 0) + (Number(stop.transportCost) || 0);
 
   const getCategoryBadgeClass = (category) => {
     switch (category?.toLowerCase()) {
@@ -185,6 +186,53 @@ const SortableCityStop = ({
           >
             <Trash2 className="w-5 h-5 stroke-[2.5]" />
           </button>
+        </div>
+      </div>
+
+      {/* User Editable Stop Expenses: Accommodation & Travelling Costs */}
+      <div className="bg-emerald-50/60 p-4 border-b border-teal-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="bg-white p-3 rounded-2xl border border-teal-200 shadow-2xs">
+          <label className="block text-[11px] font-extrabold text-slate-800 uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span className="flex items-center space-x-1">
+              <span>🏨</span>
+              <span>Accommodation Cost ({currencySymbol})</span>
+            </span>
+            <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.5 rounded">Editable</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+              {currencySymbol}
+            </span>
+            <input
+              type="number"
+              value={stop.accommodationCost !== undefined ? stop.accommodationCost : 5000}
+              onChange={(e) => onUpdateStopCost && onUpdateStopCost(stop.id, 'accommodationCost', e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+              placeholder="e.g. 5000"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white p-3 rounded-2xl border border-teal-200 shadow-2xs">
+          <label className="block text-[11px] font-extrabold text-slate-800 uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span className="flex items-center space-x-1">
+              <span>✈️</span>
+              <span>Travelling / Transit Cost ({currencySymbol})</span>
+            </span>
+            <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.5 rounded">Editable</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+              {currencySymbol}
+            </span>
+            <input
+              type="number"
+              value={stop.transportCost !== undefined ? stop.transportCost : 2000}
+              onChange={(e) => onUpdateStopCost && onUpdateStopCost(stop.id, 'transportCost', e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+              placeholder="e.g. 2000"
+            />
+          </div>
         </div>
       </div>
 
@@ -291,6 +339,8 @@ const ItineraryBuilder = () => {
   const [selectedNewCityId, setSelectedNewCityId] = useState('');
   const [deletingStopId, setDeletingStopId] = useState(null);
   const [showDeleteTripModal, setShowDeleteTripModal] = useState(false);
+  const [newStopAccomCost, setNewStopAccomCost] = useState(5000);
+  const [newStopTransportCost, setNewStopTransportCost] = useState(2000);
 
   const handleConfirmDeleteTrip = async () => {
     try {
@@ -464,11 +514,42 @@ const ItineraryBuilder = () => {
     }
   };
 
+  // Handle Live Updating Stop Costs (Accommodation & Travelling)
+  const handleUpdateStopCost = async (stopId, field, rawValue) => {
+    const val = Number(rawValue) || 0;
+    setTrip((prev) => {
+      if (!prev || !prev.stops) return prev;
+      const updatedStops = prev.stops.map((s) => {
+        if (s.id === stopId) {
+          return { ...s, [field]: val };
+        }
+        return s;
+      });
+      return { ...prev, stops: updatedStops };
+    });
+
+    const targetStop = trip?.stops?.find((s) => s.id === stopId);
+    if (targetStop) {
+      try {
+        await updateTripStop(stopId, {
+          ...targetStop,
+          [field]: val,
+        });
+      } catch (err) {
+        console.error('Failed to update stop cost:', err);
+      }
+    }
+  };
+
   // Add New City Stop
   const handleAddCityStop = async () => {
     if (!selectedNewCityId) return;
     try {
-      const newStop = await addTripStop(trip.id, { cityId: selectedNewCityId });
+      const newStop = await addTripStop(trip.id, { 
+        cityId: selectedNewCityId,
+        accommodationCost: Number(newStopAccomCost) || 5000,
+        transportCost: Number(newStopTransportCost) || 2000,
+      });
       setTrip((prev) => ({
         ...prev,
         stops: [...(prev.stops || []), newStop],
@@ -775,6 +856,7 @@ const ItineraryBuilder = () => {
                     onRemoveStop={handleDeleteStop}
                     onOpenActivityModal={(s) => setActiveStopForActivity(s)}
                     onDeleteActivity={handleDeleteActivity}
+                    onUpdateStopCost={handleUpdateStopCost}
                     isOverBudget={isOverBudget}
                   />
                 ))}
@@ -819,6 +901,29 @@ const ItineraryBuilder = () => {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 mb-1">🏨 Accommodation Cost ({currencySymbol})</label>
+                <input
+                  type="number"
+                  value={newStopAccomCost}
+                  onChange={(e) => setNewStopAccomCost(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                  placeholder="5000"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 mb-1">✈️ Travelling Cost ({currencySymbol})</label>
+                <input
+                  type="number"
+                  value={newStopTransportCost}
+                  onChange={(e) => setNewStopTransportCost(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                  placeholder="2000"
+                />
+              </div>
             </div>
 
             <div className="flex justify-end space-x-3 pt-2">

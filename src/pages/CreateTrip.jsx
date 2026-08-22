@@ -357,6 +357,12 @@ const CreateTrip = () => {
     setSelectedStops(selectedStops.filter((s) => s.cityId !== cityId));
   };
 
+  const handleUpdateStopCostInWizard = (index, field, value) => {
+    const updated = [...selectedStops];
+    updated[index] = { ...updated[index], [field]: Number(value) || 0 };
+    setSelectedStops(updated);
+  };
+
   const toggleActivitySelection = (cityId, actId) => {
     setCityActivitiesMap((prev) => {
       const currentList = prev[cityId] || [];
@@ -678,6 +684,50 @@ const CreateTrip = () => {
               Route: {selectedStops.map((s) => s.cityName).join(' → ') || 'No cities selected'}
             </span>
           </div>
+
+          {/* Selected City Accommodation & Transport Expense Questions */}
+          {selectedStops.length > 0 && (
+            <div className="p-4 rounded-2xl bg-emerald-50/70 border border-teal-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-extrabold text-teal-900 flex items-center space-x-2">
+                  <span>🏨 & ✈️ City Logistics & Expense Questions ({selectedStops.length} Selected)</span>
+                </h3>
+                <span className="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-md">User Editable</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {selectedStops.map((stop, idx) => (
+                  <div key={stop.cityId || idx} className="bg-white p-3 rounded-xl border border-teal-200 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                      <span className="text-xs font-black text-slate-900">📍 {stop.cityName}</span>
+                      <span className="text-[10px] font-bold text-slate-500">{stop.country}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">🏨 Stay Cost ({currencySymbol})</label>
+                        <input
+                          type="number"
+                          value={stop.accommodationCost !== undefined ? stop.accommodationCost : 5000}
+                          onChange={(e) => handleUpdateStopCostInWizard(idx, 'accommodationCost', e.target.value)}
+                          className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
+                          placeholder="5000"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">✈️ Travel Cost ({currencySymbol})</label>
+                        <input
+                          type="number"
+                          value={stop.transportCost !== undefined ? stop.transportCost : 2000}
+                          onChange={(e) => handleUpdateStopCostInWizard(idx, 'transportCost', e.target.value)}
+                          className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
+                          placeholder="2000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Interactive Filter & Action Bar */}
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">

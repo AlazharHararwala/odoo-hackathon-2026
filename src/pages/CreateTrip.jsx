@@ -225,6 +225,7 @@ const CreateTrip = () => {
     setAllCities((prev) => [newCityObj, ...prev]);
 
     const newStop = {
+      id: `stop_${newCityId}_${Date.now()}`,
       cityId: newCityId,
       cityName: newCityObj.name,
       country: newCityObj.country,
@@ -260,7 +261,7 @@ const CreateTrip = () => {
 
     const cityId = targetCityForActivity.cityId;
     const newActObj = {
-      id: `custom_act_${Date.now()}`,
+      id: `custom_act_${cityId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       cityId,
       name: customActivityName.trim(),
       category: customActivityCategory,
@@ -298,7 +299,9 @@ const CreateTrip = () => {
           const acts = await getActivities({ cityId: stop.cityId });
           if (acts && acts.length > 0) {
             map[stop.cityId] = acts.slice(0, 3).map((a, idx) => ({ 
-              ...a, 
+              ...a,
+              id: a.id || `act_${stop.cityId}_${idx}`,
+              cityId: stop.cityId,
               selected: true,
               image: a.image || SPOT_PHOTOS[(sIdx * 4 + idx) % SPOT_PHOTOS.length]
             }));
@@ -306,7 +309,7 @@ const CreateTrip = () => {
             const cityObj = filteredCities.find((c) => c.id === stop.cityId || c.name === stop.cityName);
             const attractions = (cityObj?.attractions || ['City Sightseeing Walk', 'Local Cultural Tour', 'Traditional Culinary Tasting']).slice(0, 3);
             map[stop.cityId] = attractions.map((attr, idx) => ({
-              id: `act_${stop.cityId}_${idx}`,
+              id: `act_${stop.cityId}_${idx}_${Date.now()}`,
               cityId: stop.cityId,
               name: attr,
               category: idx === 0 ? 'Sightseeing' : idx === 1 ? 'Culture' : 'Food',
@@ -335,6 +338,7 @@ const CreateTrip = () => {
   const handleAddStop = (city) => {
     if (selectedStops.some((s) => s.cityId === city.id)) return;
     const newStop = {
+      id: `stop_${city.id}_${Date.now()}`,
       cityId: city.id,
       cityName: city.name,
       country: city.country,
@@ -361,11 +365,11 @@ const CreateTrip = () => {
   const handleCreateTripSubmit = async () => {
     setLoading(true);
 
-    const stopsData = selectedStops.map((stop) => {
+    const stopsData = selectedStops.map((stop, sIdx) => {
       const cityActs = (cityActivitiesMap[stop.cityId] || [])
         .filter((a) => a.selected)
         .map((a, aIdx) => ({
-          id: a.id || `tac_${Date.now()}_${aIdx}`,
+          id: a.id || `tac_${Date.now()}_${sIdx}_${aIdx}`,
           activityId: a.id,
           name: a.name,
           cost: a.cost || 0,
@@ -376,6 +380,7 @@ const CreateTrip = () => {
 
       return {
         ...stop,
+        id: stop.id || `stop_${stop.cityId}_${sIdx}_${Date.now()}`,
         startDate,
         endDate,
         activities: cityActs,

@@ -318,6 +318,16 @@ const ItineraryBuilder = () => {
     setLoading(true);
     try {
       const data = await getTrip(tripId);
+      if (data && data.stops) {
+        data.stops = data.stops.map((s, idx) => ({
+          ...s,
+          id: s.id || `stop_${data.id || 'trip'}_${idx}_${s.cityId || idx}`,
+          activities: (s.activities || []).map((a, aIdx) => ({
+            ...a,
+            id: a.id || `tac_${idx}_${aIdx}`,
+          })),
+        }));
+      }
       setTrip(data);
     } catch (err) {
       console.error(err);
@@ -365,12 +375,13 @@ const ItineraryBuilder = () => {
     }
   };
 
-  // Add Activity to Stop
+  // Add Activity to Specific Stop
   const handleAddActivityToStop = async (activity) => {
     if (!activeStopForActivity) return;
+    const targetStopId = String(activeStopForActivity.id);
 
     try {
-      const newTac = await addTripActivity(trip.id, activeStopForActivity.id, {
+      const newTac = await addTripActivity(trip.id, targetStopId, {
         activityId: activity.id,
         name: activity.name,
         cost: activity.cost,
@@ -378,10 +389,11 @@ const ItineraryBuilder = () => {
         time: '10:00',
       });
 
-      // Update local state instantly
+      // Update local state ONLY for this specific stop
       setTrip((prev) => {
-        const updatedStops = prev.stops.map((stop) => {
-          if (stop.id === activeStopForActivity.id) {
+        if (!prev) return prev;
+        const updatedStops = (prev.stops || []).map((stop) => {
+          if (String(stop.id) === targetStopId) {
             return {
               ...stop,
               activities: [...(stop.activities || []), newTac],
@@ -389,33 +401,40 @@ const ItineraryBuilder = () => {
           }
           return stop;
         });
+        updateTrip(tripId || prev.id, { stops: updatedStops });
         return { ...prev, stops: updatedStops };
       });
 
       showToast(`Added "${activity.name}" to ${activeStopForActivity.cityName}!`, 'success');
     } catch (err) {
+      console.error(err);
       showToast('Failed to add activity', 'error');
     }
   };
 
   // Delete Activity
   const handleDeleteActivity = async (stopId, activityId) => {
+    const targetStopId = String(stopId);
+    const targetActId = String(activityId);
     try {
-      await deleteTripActivity(trip.id, activityId);
       setTrip((prev) => {
-        const updatedStops = prev.stops.map((stop) => {
-          if (stop.id === stopId) {
+        if (!prev) return prev;
+        const updatedStops = (prev.stops || []).map((stop) => {
+          if (String(stop.id) === targetStopId) {
             return {
               ...stop,
-              activities: stop.activities.filter((a) => a.id !== activityId),
+              activities: (stop.activities || []).filter((a) => String(a.id) !== targetActId && String(a.activityId) !== targetActId),
             };
           }
           return stop;
         });
+        updateTrip(tripId || prev.id, { stops: updatedStops });
         return { ...prev, stops: updatedStops };
       });
+      await deleteTripActivity(trip.id, targetActId);
       showToast('Activity removed from itinerary', 'info');
     } catch (err) {
+      console.error(err);
       showToast('Failed to remove activity', 'error');
     }
   };

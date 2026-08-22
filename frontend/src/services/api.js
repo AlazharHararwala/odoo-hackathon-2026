@@ -64,15 +64,25 @@ const getStoredTrips = () => {
     localStorage.setItem('globetrotter_trips', JSON.stringify(MOCK_TRIPS));
   }
 
-  // Auto-update statuses & compute estimated budget for stored trips
-  const updatedTrips = trips.map((trip) => {
-    let calculatedEst = (trip.stops || []).reduce((acc, stop) => {
+  // Auto-update statuses & compute estimated budget & ensure unique IDs for stored stops
+  const updatedTrips = trips.map((trip, tIdx) => {
+    const fixedStops = (trip.stops || []).map((stop, sIdx) => ({
+      ...stop,
+      id: stop.id || `stop_${trip.id || tIdx}_${sIdx}_${stop.cityId || Math.random().toString(36).substring(2, 6)}`,
+      activities: (stop.activities || []).map((act, aIdx) => ({
+        ...act,
+        id: act.id || `tac_${trip.id || tIdx}_${sIdx}_${aIdx}`,
+      })),
+    }));
+
+    let calculatedEst = fixedStops.reduce((acc, stop) => {
       const actSum = (stop.activities || []).reduce((aSum, a) => aSum + (a.cost || 0), 0);
       return acc + actSum + (stop.accommodationCost || 0) + (stop.transportCost || 0);
     }, 0);
 
     return {
       ...trip,
+      stops: fixedStops,
       estimatedBudget: calculatedEst > 0 ? calculatedEst : (trip.estimatedBudget || 45000),
       status: calculateTripStatus(trip.startDate, trip.endDate, trip.status),
     };
@@ -193,6 +203,15 @@ export const createTrip = async (tripData) => {
     });
   });
 
+  const formattedStops = (tripData.stops || []).map((stop, sIdx) => ({
+    ...stop,
+    id: stop.id || `stop_${Date.now()}_${sIdx}_${stop.cityId || Math.random().toString(36).substring(2, 6)}`,
+    activities: (stop.activities || []).map((act, aIdx) => ({
+      ...act,
+      id: act.id || `tac_${Date.now()}_${sIdx}_${aIdx}`,
+    })),
+  }));
+
   const newTrip = {
     id: `trip_${Date.now()}`,
     name: tripData.name || 'New Adventure',
@@ -207,7 +226,7 @@ export const createTrip = async (tripData) => {
     shareId: `sh_${Math.random().toString(36).substring(2, 9)}`,
     isPublic: true,
     createdUser: INITIAL_USER.name,
-    stops: tripData.stops || [],
+    stops: formattedStops,
   };
   trips.unshift(newTrip);
   saveStoredTrips(trips);
@@ -385,16 +404,17 @@ export const addTripActivity = async (tripId, stopId, activityData) => {
     const response = await apiClient.post(`/trips/${tripId}/activities`, { stopId, ...activityData });
     return response.data;
   }
-  await delay();
+  await delay(50);
   const trips = getStoredTrips();
-  const trip = trips.find(t => t.id === tripId);
+  const trip = trips.find((t) => String(t.id) === String(tripId));
   if (!trip) throw new Error('Trip not found');
 
-  const stop = trip.stops?.find(s => s.id === stopId);
+  const targetStopId = String(stopId);
+  const stop = (trip.stops || []).find((s) => String(s.id) === targetStopId);
   if (!stop) throw new Error('Stop not found');
 
   const newActivity = {
-    id: `tac_${Date.now()}`,
+    id: `tac_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     activityId: activityData.activityId || `act_custom_${Date.now()}`,
     name: activityData.name,
     time: activityData.time || '10:00',
@@ -408,9 +428,9 @@ export const addTripActivity = async (tripId, stopId, activityData) => {
   
   // Recalculate estimated trip budget
   let totalCost = 0;
-  trip.stops.forEach(s => {
+  trip.stops.forEach((s) => {
     totalCost += (s.accommodationCost || 0) + (s.transportCost || 0);
-    s.activities?.forEach(act => { totalCost += (act.cost || 0); });
+    (s.activities || []).forEach((act) => { totalCost += (act.cost || 0); });
   });
   trip.estimatedBudget = totalCost;
 

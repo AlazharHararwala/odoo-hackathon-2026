@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getTrips, getTripTimeline } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,10 +11,12 @@ import {
   ChevronDown, 
   ChevronUp, 
   ArrowDown, 
-  Compass 
+  Compass,
+  Plus
 } from 'lucide-react';
 
 const TimelinePage = () => {
+  const navigate = useNavigate();
   const { t, formatPrice } = useLanguage();
   const { showToast } = useToast();
   const [trips, setTrips] = useState([]);
@@ -29,16 +32,25 @@ const TimelinePage = () => {
   useEffect(() => {
     if (selectedTripId) {
       fetchTimeline(selectedTripId);
+    } else {
+      setTimelineData(null);
     }
   }, [selectedTripId]);
 
   const fetchTrips = async () => {
+    setLoading(true);
     try {
       const data = await getTrips();
-      setTrips(data);
-      if (data.length > 0) setSelectedTripId(data[0].id);
+      setTrips(data || []);
+      if (data && data.length > 0) {
+        setSelectedTripId(data[0].id);
+      } else {
+        setTimelineData(null);
+        setLoading(false);
+      }
     } catch (err) {
       console.error(err);
+      setLoading(false);
     }
   };
 
@@ -89,10 +101,29 @@ const TimelinePage = () => {
         )}
       </div>
 
-      {loading || !timelineData ? (
+      {loading ? (
         <div className="py-20 text-center space-y-4">
           <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-sm font-semibold text-slate-600">Building visual timeline...</p>
+        </div>
+      ) : trips.length === 0 || !timelineData ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 space-y-4 shadow-xs">
+          <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mx-auto shadow-inner">
+            <Compass className="w-8 h-8" />
+          </div>
+          <div className="space-y-1 max-w-sm mx-auto">
+            <h3 className="font-extrabold text-base text-slate-900">No trips planned yet</h3>
+            <p className="text-xs text-slate-500">
+              Create your first multi-city trip to view its day-by-day chronological schedule and itinerary timeline.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/create-trip')}
+            className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-600/20 transition-all hover:scale-105 inline-flex items-center space-x-1.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Plan a Trip</span>
+          </button>
         </div>
       ) : (
         <div className="space-y-6">

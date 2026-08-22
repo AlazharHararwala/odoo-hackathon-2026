@@ -1,7 +1,6 @@
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
   Map, 
@@ -12,13 +11,11 @@ import {
   Settings, 
   Globe,
   Sparkles,
-  User,
   X
 } from 'lucide-react';
 
 const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
 
   const navItems = [
     { label: t('dashboard', 'Dashboard'), path: '/dashboard', icon: LayoutDashboard },
@@ -35,15 +32,12 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
       {/* Brand Header */}
       <div className="p-5 flex items-center justify-between border-b border-slate-800">
         <NavLink to="/dashboard" className="flex items-center space-x-3 group">
-          <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-all duration-300">
-            <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 via-transparent to-cyan-400/20" />
-              <Compass className="w-5 h-5 text-emerald-400 group-hover:rotate-45 transition-transform duration-500 relative z-10" />
-            </div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-teal-400 flex items-center justify-center shadow-lg shadow-primary-900/40 group-hover:scale-105 transition-transform duration-200">
+            <Globe className="w-6 h-6 text-white" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-white tracking-tight">GlobeTrotter</span>
-            <span className="block text-[10px] uppercase tracking-widest text-emerald-400 font-extrabold">Travel Planner</span>
+            <span className="text-xl font-bold text-white tracking-tight">GlobeTrotter</span>
+            <span className="block text-[10px] uppercase tracking-widest text-primary-400 font-semibold">Travel Planner</span>
           </div>
         </NavLink>
         {setIsMobileOpen && (
@@ -82,32 +76,23 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         })}
       </nav>
 
-      {/* Bottom Personal Traveler Passport Card */}
-      <div className="p-4 m-4 rounded-2xl bg-gradient-to-br from-slate-800/90 to-emerald-950/40 border border-emerald-500/30 shadow-lg relative overflow-hidden group">
-        <Link to="/settings" className="flex items-center space-x-3 mb-2.5 hover:opacity-90 transition-opacity">
-          <img
-            src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
-            alt={user?.name || 'User Avatar'}
-            className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-400/60 shadow-xs"
-          />
-          <div className="overflow-hidden">
-            <span className="text-xs font-extrabold text-white block truncate">{user?.name || 'Alazhar'}</span>
-            <span className="text-[10px] text-emerald-400 font-bold tracking-wide uppercase block">Lead Explorer</span>
+      {/* Bottom Professional Travel Assistant Card */}
+      <div className="p-4 m-4 rounded-2xl bg-gradient-to-br from-slate-800/90 to-slate-950 border border-slate-700/70 shadow-lg relative overflow-hidden group">
+        <div className="flex items-center space-x-2 mb-2">
+          <div className="w-6 h-6 rounded-lg bg-primary-500/20 border border-primary-400/30 flex items-center justify-center">
+            <Sparkles className="w-3.5 h-3.5 text-primary-400" />
           </div>
-        </Link>
-
-        <p className="text-[11px] text-slate-300 leading-relaxed mb-3">
-          {t('assistantDesc', '900+ cities unlocked. Craft your route & track live budgets.')}
+          <span className="text-xs font-bold text-white tracking-wide">{t('smartAssistant', 'Smart Travel Assistant')}</span>
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed mb-3">
+          {t('assistantDesc', 'Optimize multi-city routes, track real-time budgets, and explore curated local attractions.')}
         </p>
-
-        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2.5 border-t border-slate-800/80">
-          <span className="flex items-center space-x-1.5 font-bold text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-            <span>{t('allSystemsLive', 'Explorer Ready')}</span>
+        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2.5 border-t border-slate-800">
+          <span className="flex items-center space-x-1.5 font-semibold text-emerald-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+            <span>{t('allSystemsLive', 'All Systems Live')}</span>
           </span>
-          <Link to="/settings" className="text-slate-400 hover:text-white font-semibold flex items-center space-x-1">
-            <Settings className="w-3.5 h-3.5" />
-          </Link>
+          <span className="text-slate-500 font-mono text-[10px]">v1.2.0</span>
         </div>
       </div>
     </div>

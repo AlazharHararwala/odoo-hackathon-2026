@@ -35,20 +35,11 @@ export const AuthProvider = ({ children }) => {
 
   const logoutUser = () => {
     localStorage.removeItem('globetrotter_token');
-    localStorage.removeItem('globetrotter_user');
     setUser(null);
   };
 
   const updateUserProfile = (newProfileData) => {
-    setUser((prev) => {
-      const updated = { ...(prev || {}), ...newProfileData };
-      try {
-        localStorage.setItem('globetrotter_user', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Error saving updated user to localStorage:', err);
-      }
-      return updated;
-    });
+    setUser((prev) => ({ ...prev, ...newProfileData }));
   };
 
   return (

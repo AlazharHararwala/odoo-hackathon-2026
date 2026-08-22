@@ -14,8 +14,7 @@ import {
   Clock, 
   CheckCircle2, 
   Sparkles,
-  ArrowRight,
-  Users
+  ArrowRight
 } from 'lucide-react';
 
 const SharedTrip = () => {
@@ -102,16 +101,13 @@ const SharedTrip = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-primary-500 selection:text-white">
       {/* Top Public Brand Navigation Header */}
       <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-3 group">
-          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-all duration-300">
-            <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 via-transparent to-cyan-400/20" />
-              <Compass className="w-4 h-4 text-emerald-400 group-hover:rotate-45 transition-transform duration-500 relative z-10" />
-            </div>
+        <Link to="/" className="flex items-center space-x-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-teal-400 flex items-center justify-center shadow-lg shadow-primary-950/40">
+            <Globe className="w-5 h-5 text-white" />
           </div>
           <div>
             <span className="text-lg font-extrabold text-white tracking-tight">GlobeTrotter</span>
-            <span className="block text-[9px] uppercase tracking-widest text-emerald-400 font-extrabold">Shared Travel Itinerary</span>
+            <span className="block text-[9px] uppercase tracking-widest text-primary-400 font-semibold">Shared Travel Itinerary</span>
           </div>
         </Link>
 
@@ -162,22 +158,9 @@ const SharedTrip = () => {
                 <Calendar className="w-4 h-4 mr-1.5 text-primary-400" />
                 {trip.startDate} – {trip.endDate} ({trip.totalDays} Days)
               </span>
-              <span className="flex items-center font-semibold text-purple-300">
-                <Users className="w-4 h-4 mr-1.5" />
-                {trip.adultsCount || 1} {(trip.adultsCount || 1) === 1 ? 'Adult' : 'Adults'}
-                {(trip.childrenCount || 0) > 0 ? `, ${trip.childrenCount} ${(trip.childrenCount || 0) === 1 ? 'Child' : 'Children'}` : ''}
-                {' '}({(trip.adultsCount || 1) + (trip.childrenCount || 0)} Total)
+              <span className="flex items-center font-bold text-amber-400 text-sm">
+                {formatPrice(trip.estimatedBudget || 0)} Est. Budget
               </span>
-              <div className="flex items-baseline space-x-2">
-                <span className="flex items-center font-bold text-amber-400 text-sm" title="Group Total Cost">
-                  {formatPrice(trip.estimatedBudget || 0)} Group Total
-                </span>
-                {((trip.adultsCount || 1) + (trip.childrenCount || 0)) > 1 && (
-                  <span className="text-[11px] text-teal-300 font-semibold">
-                    ({formatPrice(Math.round((trip.estimatedBudget || 0) / ((trip.adultsCount || 1) + (trip.childrenCount || 0))))} / person)
-                  </span>
-                )}
-              </div>
             </div>
           </div>
 

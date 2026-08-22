@@ -1,10 +1,10 @@
 // GlobeTrotter Comprehensive Mock Dataset
 
 export const INITIAL_USER = {
-  id: '101',
-  name: 'Alazhar',
-  email: 'az@gmail.com',
-  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80',
+  id: 'usr_101',
+  name: 'Alex Morgan',
+  email: 'alex.morgan@example.com',
+  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
   bio: 'Avid traveler, photographer, and coffee enthusiast exploring one city at a time.',
   joinedDate: 'Jan 2025',
   preferences: {

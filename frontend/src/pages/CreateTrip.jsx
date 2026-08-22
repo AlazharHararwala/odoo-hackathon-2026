@@ -1,50 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createTrip, getCities, getActivities } from '../services/api';
+import { getCities, createTrip, getActivities } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { 
-  Check, 
+  Calendar, 
+  MapPin, 
+  IndianRupee, 
   ArrowRight, 
   ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  IndianRupee, 
-  Image as ImageIcon, 
   Plus, 
-  Trash2, 
-  Sparkles,
-  Clock
+  Check, 
+  Sparkles, 
+  Clock,
+  Compass,
+  Star
 } from 'lucide-react';
-
-const COVER_IMAGES = [
-  'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
-];
 
 const CreateTrip = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
   const [step, setStep] = useState(1);
-  const [allCities, setAllCities] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Step 1 State: Details
-  const [tripName, setTripName] = useState('Europe Adventure');
+  // Step 1: Trip Details
+  const [tripName, setTripName] = useState('');
   const [startDate, setStartDate] = useState('2026-09-10');
   const [endDate, setEndDate] = useState('2026-09-20');
-  const [description, setDescription] = useState('10-day European vacation discovering famous cities and culture.');
-  const [coverImage, setCoverImage] = useState(COVER_IMAGES[1]);
-  const [targetBudget, setTargetBudget] = useState('75000');
+  const [targetBudget, setTargetBudget] = useState(75000);
+  const [description, setDescription] = useState('');
+  const [coverImage, setCoverImage] = useState(
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80'
+  );
 
-  // Step 2 State: Selected City Stops
+  // Step 2: City Destinations
+  const [allCities, setAllCities] = useState([]);
   const [selectedStops, setSelectedStops] = useState([]);
 
-  // Step 3 State: Activities per stop
-  const [stopActivities, setStopActivities] = useState({});
+  // Step 3: Specific City Activities Map (cityId -> array of selected activities)
+  const [cityActivitiesMap, setCityActivitiesMap] = useState({});
 
   useEffect(() => {
     fetchCities();
@@ -54,89 +48,129 @@ const CreateTrip = () => {
     try {
       const data = await getCities();
       setAllCities(data);
-      // Pre-select 2 demo cities for smooth UX
-      if (data.length >= 2) {
-        setSelectedStops([
-          { cityId: data[1].id, cityName: data[1].name, country: data[1].country, accommodationCost: 8000, transportCost: 3000 },
-          { cityId: data[2].id, cityName: data[2].name, country: data[2].country, accommodationCost: 12000, transportCost: 5000 },
-        ]);
-      }
+      // Pre-select 3 default popular stops: Mumbai, Dubai, Paris
+      const initialStops = data.filter((c) => ['c_mumbai', 'c_dubai', 'c_paris'].includes(c.id));
+      setSelectedStops(
+        initialStops.map((c, idx) => ({
+          cityId: c.id,
+          cityName: c.name,
+          country: c.country,
+          image: c.image,
+          order: idx + 1,
+          accommodationCost: c.costIndex === 'Luxury' ? 15000 : c.costIndex === 'Moderate' ? 8000 : 4000,
+          transportCost: 3000,
+        }))
+      );
     } catch (err) {
       console.error(err);
     }
   };
 
+  // When step 3 is reached or selectedStops changes, fetch specific activities for each selected city
+  useEffect(() => {
+    if (selectedStops.length > 0) {
+      loadSpecificActivitiesForCities();
+    }
+  }, [selectedStops]);
+
+  const loadSpecificActivitiesForCities = async () => {
+    const map = { ...cityActivitiesMap };
+    for (const stop of selectedStops) {
+      if (!map[stop.cityId]) {
+        try {
+          const acts = await getActivities({ cityId: stop.cityId });
+          // If no specific mock activities found, fallback to generating distinct attractions from city metadata
+          if (acts && acts.length > 0) {
+            map[stop.cityId] = acts.map((a) => ({ ...a, selected: true }));
+          } else {
+            const cityObj = allCities.find((c) => c.id === stop.cityId);
+            const attractions = cityObj?.attractions || ['City Sightseeing Walk', 'Local Cultural Tour', 'Traditional Culinary Tasting'];
+            map[stop.cityId] = attractions.map((attr, idx) => ({
+              id: `act_${stop.cityId}_${idx}`,
+              cityId: stop.cityId,
+              name: attr,
+              category: idx % 2 === 0 ? 'Sightseeing' : 'Culture',
+              cost: (idx + 1) * 600,
+              time: idx === 0 ? '09:30' : idx === 1 ? '14:00' : '18:00',
+              selected: true,
+              image: cityObj?.image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=400&q=80',
+            }));
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    setCityActivitiesMap(map);
+  };
+
   const calculateDays = () => {
     if (!startDate || !endDate) return 1;
-    const diff = new Date(endDate) - new Date(startDate);
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days > 0 ? days : 1;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 1;
   };
 
   const handleAddStop = (city) => {
-    if (selectedStops.some(s => s.cityId === city.id)) {
-      showToast(`${city.name} is already added to your itinerary`, 'info');
-      return;
-    }
-    setSelectedStops([
-      ...selectedStops,
-      {
-        cityId: city.id,
-        cityName: city.name,
-        country: city.country,
-        accommodationCost: 7000,
-        transportCost: 3000,
-      }
-    ]);
+    if (selectedStops.some((s) => s.cityId === city.id)) return;
+    const newStop = {
+      cityId: city.id,
+      cityName: city.name,
+      country: city.country,
+      image: city.image,
+      order: selectedStops.length + 1,
+      accommodationCost: city.costIndex === 'Luxury' ? 15000 : city.costIndex === 'Moderate' ? 8000 : 4000,
+      transportCost: 3000,
+    };
+    setSelectedStops([...selectedStops, newStop]);
   };
 
   const handleRemoveStop = (cityId) => {
-    setSelectedStops(selectedStops.filter(s => s.cityId !== cityId));
+    setSelectedStops(selectedStops.filter((s) => s.cityId !== cityId));
   };
 
-  const handleFinalSubmit = async () => {
-    if (!tripName) {
-      showToast('Please enter a trip name', 'error');
-      return;
-    }
-    if (selectedStops.length === 0) {
-      showToast('Please add at least one city destination stop', 'error');
-      return;
-    }
+  const toggleActivitySelection = (cityId, actId) => {
+    setCityActivitiesMap((prev) => {
+      const currentList = prev[cityId] || [];
+      const updated = currentList.map((a) => (a.id === actId ? { ...a, selected: !a.selected } : a));
+      return { ...prev, [cityId]: updated };
+    });
+  };
 
+  const handleCreateTripSubmit = async () => {
     setLoading(true);
-    try {
-      const totalDays = calculateDays();
-      const formattedStops = selectedStops.map((stop, idx) => ({
-        id: `stop_${Date.now()}_${idx}`,
-        cityId: stop.cityId,
-        cityName: stop.cityName,
-        country: stop.country,
-        startDate,
-        endDate,
-        order: idx + 1,
-        accommodationCost: stop.accommodationCost,
-        transportCost: stop.transportCost,
-        activities: (stopActivities[stop.cityId] || []).map((act, aIdx) => ({
-          id: `tac_${Date.now()}_${aIdx}`,
-          activityId: act.id,
-          name: act.name,
-          time: '10:00',
-          cost: act.cost,
-          category: act.category,
-          dayIndex: idx + 1,
-        }))
-      }));
 
-      const newTrip = await createTrip({
-        name: tripName,
+    const stopsData = selectedStops.map((stop) => {
+      const cityActs = (cityActivitiesMap[stop.cityId] || [])
+        .filter((a) => a.selected)
+        .map((a, aIdx) => ({
+          id: a.id || `tac_${Date.now()}_${aIdx}`,
+          activityId: a.id,
+          name: a.name,
+          cost: a.cost || 0,
+          category: a.category || 'Sightseeing',
+          time: a.time || (aIdx === 0 ? '09:30' : aIdx === 1 ? '13:30' : '17:00'),
+        }));
+
+      return {
+        ...stop,
         startDate,
         endDate,
-        totalDays,
+        activities: cityActs,
+      };
+    });
+
+    try {
+      const newTrip = await createTrip({
+        name: tripName || `Multi-City Journey to ${selectedStops.map((s) => s.cityName).join(', ')}`,
         description,
-        coverImage,
+        startDate,
+        endDate,
+        totalDays: calculateDays(),
         targetBudget: Number(targetBudget),
-        stops: formattedStops,
+        coverImage,
+        stops: stopsData,
       });
 
       showToast('Trip created successfully! Launching itinerary builder...', 'success');
@@ -155,7 +189,7 @@ const CreateTrip = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Plan a New Trip</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Build your multi-city travel itinerary step by step</p>
+            <p className="text-xs text-slate-500 mt-0.5">Build your personalized multi-city travel itinerary step by step</p>
           </div>
           <span className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full w-max">
             Step {step} of 4
@@ -202,7 +236,7 @@ const CreateTrip = () => {
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">Trip Name</label>
               <input
                 type="text"
-                placeholder="e.g. Europe Adventure, Summer in Goa"
+                placeholder="e.g. Europe Adventure, Summer in Asia"
                 value={tripName}
                 onChange={(e) => setTripName(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
@@ -262,28 +296,6 @@ const CreateTrip = () => {
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-2">Select Cover Photo</label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                {COVER_IMAGES.map((imgUrl, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => setCoverImage(imgUrl)}
-                    className={`relative rounded-xl overflow-hidden h-20 cursor-pointer border-2 transition-all ${
-                      coverImage === imgUrl ? 'border-primary-600 ring-2 ring-primary-500/30 scale-105' : 'border-transparent opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={imgUrl} alt="Cover" className="w-full h-full object-cover" />
-                    {coverImage === imgUrl && (
-                      <div className="absolute inset-0 bg-primary-600/30 flex items-center justify-center">
-                        <Check className="w-5 h-5 text-white" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="flex justify-end pt-4 border-t border-slate-100">
@@ -292,41 +304,41 @@ const CreateTrip = () => {
               onClick={() => setStep(2)}
               className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-600/20 flex items-center space-x-2"
             >
-              <span>Next: Select Destinations</span>
+              <span>Next: Select Cities</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
-      {/* STEP 2: DESTINATIONS / CITIES */}
+      {/* STEP 2: DESTINATION CITIES */}
       {step === 2 && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Step 2: Add City Destinations</h2>
-              <p className="text-xs text-slate-500">Pick the cities you will visit on your route</p>
+              <h2 className="text-lg font-bold text-slate-900">Step 2: Select Travel Stop Cities</h2>
+              <p className="text-xs text-slate-500">Pick destination cities for your multi-city route ({selectedStops.length} selected)</p>
             </div>
-            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full">
-              {selectedStops.length} Cities Added
+            <span className="text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200 w-max">
+              Route: {selectedStops.map((s) => s.cityName).join(' → ') || 'No cities selected'}
             </span>
           </div>
 
-          {/* Selected Cities Pill Bar */}
+          {/* Selected Cities Badges Bar */}
           {selectedStops.length > 0 && (
-            <div className="p-4 rounded-2xl bg-primary-50/60 border border-primary-200 space-y-2">
-              <span className="text-xs font-bold text-primary-800 uppercase tracking-wider block">Your Selected Route:</span>
-              <div className="flex flex-wrap gap-2 items-center">
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <span className="text-xs font-semibold text-slate-500 block">Selected Route Sequence:</span>
+              <div className="flex flex-wrap items-center gap-2">
                 {selectedStops.map((stop, i) => (
                   <React.Fragment key={stop.cityId}>
-                    <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-white text-slate-800 rounded-xl border border-primary-300 text-xs font-bold shadow-xs">
-                      <MapPin className="w-3.5 h-3.5 text-primary-600" />
-                      <span>{stop.cityName}</span>
+                    <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs">
+                      <span>📍 {stop.cityName}</span>
                       <button
+                        type="button"
                         onClick={() => handleRemoveStop(stop.cityId)}
-                        className="text-slate-400 hover:text-rose-600 ml-1 p-0.5"
+                        className="text-slate-400 hover:text-rose-600 ml-1"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        ×
                       </button>
                     </div>
                     {i < selectedStops.length - 1 && (
@@ -341,11 +353,11 @@ const CreateTrip = () => {
           {/* Cities Picker Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[420px] overflow-y-auto pr-1">
             {allCities.map((city) => {
-              const isSelected = selectedStops.some(s => s.cityId === city.id);
+              const isSelected = selectedStops.some((s) => s.cityId === city.id);
               return (
                 <div
                   key={city.id}
-                  onClick={() => isSelected ? handleRemoveStop(city.id) : handleAddStop(city)}
+                  onClick={() => (isSelected ? handleRemoveStop(city.id) : handleAddStop(city))}
                   className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center space-x-3 ${
                     isSelected
                       ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500/20 shadow-sm'
@@ -392,32 +404,87 @@ const CreateTrip = () => {
         </div>
       )}
 
-      {/* STEP 3: ACTIVITIES PREVIEW */}
+      {/* STEP 3: SPECIFIC CITY ACTIVITIES PREVIEW & SELECTION */}
       {step === 3 && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Step 3: Initial Activity Ideas</h2>
-              <p className="text-xs text-slate-500">Pick starting attractions for your cities (You can add more in the Builder later)</p>
+              <h2 className="text-lg font-bold text-slate-900">Step 3: Top Attractions per City</h2>
+              <p className="text-xs text-slate-500">
+                Pick popular authentic tourist spots for each of your selected cities (Customize times & add custom events later in the builder)
+              </p>
             </div>
             <Sparkles className="w-5 h-5 text-primary-500" />
           </div>
 
-          <div className="space-y-6 max-h-[450px] overflow-y-auto pr-1">
-            {selectedStops.map((stop) => (
-              <div key={stop.cityId} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-primary-600" />
-                    <span>{stop.cityName}, {stop.country}</span>
-                  </h3>
-                </div>
+          <div className="space-y-8 max-h-[500px] overflow-y-auto pr-1">
+            {selectedStops.map((stop) => {
+              const activities = cityActivitiesMap[stop.cityId] || [];
 
-                <p className="text-xs text-slate-500">
-                  Default sightseeing & culinary experiences will be prepared for {stop.cityName}. You can customize times and costs in the interactive builder.
-                </p>
-              </div>
-            ))}
+              return (
+                <div key={stop.cityId} className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-4">
+                  {/* City Header */}
+                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary-600 text-white flex items-center justify-center font-bold text-xs">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-base text-slate-900">
+                          {stop.cityName}, {stop.country}
+                        </h3>
+                        <span className="text-[11px] text-slate-500">Famous Tourist Spots & Experiences</span>
+                      </div>
+                    </div>
+
+                    <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200">
+                      {activities.filter((a) => a.selected).length} Selected
+                    </span>
+                  </div>
+
+                  {/* Specific City Activities Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {activities.map((act) => (
+                      <div
+                        key={act.id}
+                        onClick={() => toggleActivitySelection(stop.cityId, act.id)}
+                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between space-x-3 ${
+                          act.selected
+                            ? 'bg-white border-primary-500 ring-2 ring-primary-500/20 shadow-xs'
+                            : 'bg-white/60 border-slate-200 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3 min-w-0">
+                          {act.image && (
+                            <img src={act.image} alt={act.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                          )}
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-xs text-slate-900 line-clamp-1">{act.name}</h4>
+                            <div className="flex items-center space-x-2 mt-0.5">
+                              <span className="text-[10px] font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md">
+                                {act.category || 'Sightseeing'}
+                              </span>
+                              <span className="text-[10px] font-semibold text-slate-500 flex items-center">
+                                <IndianRupee className="w-3 h-3 text-slate-400" />
+                                {act.cost === 0 ? 'Free' : act.cost?.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                            act.selected ? 'bg-primary-600 text-white' : 'bg-slate-200 text-slate-500'
+                          }`}
+                        >
+                          {act.selected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-slate-100">
@@ -449,38 +516,46 @@ const CreateTrip = () => {
             <p className="text-xs text-slate-500">Verify details before opening the Itinerary Builder</p>
           </div>
 
-          {/* Cover & Title Preview Card */}
-          <div className="relative rounded-2xl overflow-hidden h-48 bg-slate-900 text-white p-6 flex flex-col justify-end">
-            <img src={coverImage} alt="Cover" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-            <div className="relative z-10 space-y-1">
-              <span className="px-2.5 py-0.5 rounded-md bg-primary-600 text-[10px] font-bold uppercase tracking-wider">
-                {calculateDays()} Days Trip
+          <div className="space-y-4">
+            <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3">
+              <span className="text-xs font-bold text-teal-400 block uppercase tracking-wider">
+                {calculateDays()} Days Multi-City Trip
               </span>
-              <h3 className="text-2xl font-black">{tripName}</h3>
-              <p className="text-xs text-slate-200">{startDate} to {endDate}</p>
-            </div>
-          </div>
-
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-500 font-medium">Destinations Route:</span>
-              <p className="font-bold text-slate-900 text-sm">
-                {selectedStops.map(s => s.cityName).join(' → ')}
-              </p>
+              <h3 className="text-xl font-black">{tripName || `Trip to ${selectedStops.map((s) => s.cityName).join(', ')}`}</h3>
+              <p className="text-xs text-slate-300">{description || 'Personalized travel itinerary.'}</p>
+              <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs font-semibold">
+                <span>Dates: {startDate} to {endDate}</span>
+                <span className="text-amber-400 flex items-center font-bold">
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  {Number(targetBudget).toLocaleString('en-IN')} Target Budget
+                </span>
+              </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-500 font-medium">Target Budget:</span>
-              <p className="font-bold text-primary-700 text-sm flex items-center">
-                <IndianRupee className="w-3.5 h-3.5" />
-                {Number(targetBudget).toLocaleString('en-IN')}
-              </p>
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">City Route & Selected Attractions</h4>
+              {selectedStops.map((stop, idx) => {
+                const selectedActs = (cityActivitiesMap[stop.cityId] || []).filter((a) => a.selected);
+                return (
+                  <div key={stop.cityId} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary-600 text-white font-black text-xs flex items-center justify-center">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-sm text-slate-900">📍 {stop.cityName}, {stop.country}</h5>
+                        <p className="text-xs text-slate-500">
+                          {selectedActs.length > 0 ? selectedActs.map((a) => a.name).join(' • ') : 'No initial activities selected'}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full border border-teal-200 self-start sm:self-center">
+                      {selectedActs.length} Activities
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
-            💡 <strong>Next Step:</strong> Clicking "Create & Open Builder" will construct your trip structure and take you directly to the interactive <strong>Itinerary Builder</strong> where you can reorder cities, schedule activity times, and manage your budget.
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-slate-100">
@@ -492,14 +567,21 @@ const CreateTrip = () => {
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
             </button>
+
             <button
               type="button"
               disabled={loading}
-              onClick={handleFinalSubmit}
-              className="px-8 py-3.5 bg-gradient-to-r from-primary-600 to-teal-500 hover:from-primary-700 hover:to-teal-600 text-white rounded-xl text-sm font-extrabold shadow-xl shadow-primary-600/30 flex items-center space-x-2"
+              onClick={handleCreateTripSubmit}
+              className="px-8 py-3 bg-gradient-to-r from-primary-600 to-teal-600 hover:from-primary-700 hover:to-teal-700 text-white rounded-xl text-xs font-extrabold shadow-lg shadow-primary-600/30 flex items-center space-x-2 disabled:opacity-50 transform hover:-translate-y-0.5 transition-all"
             >
-              <span>Create & Open Builder</span>
-              <ArrowRight className="w-4 h-4" />
+              {loading ? (
+                <span>Creating Itinerary...</span>
+              ) : (
+                <>
+                  <span>Create Trip & Open Builder</span>
+                  <Sparkles className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
         </div>

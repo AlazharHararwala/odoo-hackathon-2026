@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -88,7 +89,9 @@ function App() {
     <Router>
       <AuthProvider>
         <ToastProvider>
-          <AppRoutes />
+          <LanguageProvider>
+            <AppRoutes />
+          </LanguageProvider>
         </ToastProvider>
       </AuthProvider>
     </Router>

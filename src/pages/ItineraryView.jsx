@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getTrip, createShareLink } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Calendar, 
   MapPin, 
@@ -19,6 +20,7 @@ const ItineraryView = () => {
   const { id: tripId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { formatPrice, t } = useLanguage();
 
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -146,8 +148,7 @@ const ItineraryView = () => {
               {trip.stops?.length || 0} Cities Route
             </span>
             <span className="flex items-center font-bold text-amber-400 text-sm">
-              <IndianRupee className="w-4 h-4 mr-0.5" />
-              {(trip.estimatedBudget || 0).toLocaleString('en-IN')} Est. Total
+              {formatPrice(trip.estimatedBudget || 0)} Est. Total
             </span>
           </div>
         </div>
@@ -193,8 +194,7 @@ const ItineraryView = () => {
                       <h4 className="font-bold text-base text-slate-900">{act.name}</h4>
                       <div className="flex items-center space-x-2 text-xs text-slate-600 pt-0.5">
                         <span className="font-bold text-slate-900 flex items-center">
-                          <IndianRupee className="w-3 h-3" />
-                          {act.cost === 0 ? 'Free' : act.cost.toLocaleString('en-IN')}
+                          {formatPrice(act.cost)}
                         </span>
                       </div>
                     </div>
@@ -220,7 +220,7 @@ const ItineraryView = () => {
                       <span className="font-bold text-primary-700 block">{act.time} — {act.name}</span>
                       <span className="text-slate-500 text-[10px]">{act.category}</span>
                     </div>
-                    <span className="font-extrabold text-slate-800">₹{act.cost}</span>
+                    <span className="font-extrabold text-slate-800">{formatPrice(act.cost)}</span>
                   </div>
                 ))}
               </div>

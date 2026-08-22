@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getTrips, getTripTimeline } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Calendar as CalendarIcon, 
   MapPin, 
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 
 const TimelinePage = () => {
+  const { t, formatPrice } = useLanguage();
   const { showToast } = useToast();
   const [trips, setTrips] = useState([]);
   const [selectedTripId, setSelectedTripId] = useState('');
@@ -158,8 +160,7 @@ const TimelinePage = () => {
 
                               <div className="flex items-center space-x-3 self-end sm:self-center">
                                 <span className="font-extrabold text-sm text-slate-900 flex items-center bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-2xs">
-                                  <IndianRupee className="w-3.5 h-3.5 text-slate-500" />
-                                  {event.cost === 0 ? 'Free' : event.cost?.toLocaleString('en-IN')}
+                                  {formatPrice(event.cost || 0)}
                                 </span>
                               </div>
                             </div>

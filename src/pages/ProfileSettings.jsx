@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getCities } from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
 import { 
@@ -20,8 +21,9 @@ import {
 const ProfileSettings = () => {
   const { user, updateUserProfile, logoutUser } = useAuth();
   const { showToast } = useToast();
+  const { t, currency: activeCurr, setCurrency: setGlobalCurrency } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('preferences');
 
   // Form State
   const [name, setName] = useState(user?.name || 'Alex Morgan');
@@ -29,10 +31,14 @@ const ProfileSettings = () => {
   const [bio, setBio] = useState(user?.bio || 'Avid traveler exploring one city at a time.');
   const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
 
-  // Preferences
-  const [currency, setCurrency] = useState('INR (₹)');
-  const [language, setLanguage] = useState('English (US)');
+  // Preferences Form State
+  const [currency, setCurrency] = useState(activeCurr || 'USD ($)');
   const [notifications, setNotifications] = useState(true);
+
+  // Sync with active currency if it changes externally
+  useEffect(() => {
+    if (activeCurr) setCurrency(activeCurr);
+  }, [activeCurr]);
 
   // Saved Cities
   const [savedCities, setSavedCities] = useState([]);
@@ -57,6 +63,13 @@ const ProfileSettings = () => {
     showToast('Profile updated successfully!', 'success');
   };
 
+  const handleSavePreferences = (e) => {
+    e.preventDefault();
+    setGlobalCurrency(currency);
+    updateUserProfile({ currency, notifications });
+    showToast(`Preferences saved! Currency updated to ${currency.split('—')[0].trim()}`, 'success');
+  };
+
   const handleRemoveSavedCity = (cityId) => {
     setSavedCities(savedCities.filter((c) => c.id !== cityId));
     showToast('Removed city from bookmarks', 'info');
@@ -71,17 +84,17 @@ const ProfileSettings = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Account & Preferences</h1>
-        <p className="text-xs text-slate-500 mt-0.5">Manage your profile profile information, travel currency, and saved destinations</p>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('accountPreferences', 'Account & Preferences')}</h1>
+        <p className="text-xs text-slate-500 mt-0.5">{t('accountSubtitle', 'Manage your profile information, travel currency, and saved destinations')}</p>
       </div>
 
       {/* Navigation Tabs */}
       <div className="flex items-center space-x-2 border-b border-slate-200 overflow-x-auto scrollbar-none pb-1">
         {[
-          { id: 'profile', label: 'Profile Information', icon: User },
-          { id: 'preferences', label: 'App Preferences', icon: Settings },
-          { id: 'saved', label: 'Saved Destinations', icon: Bookmark },
-          { id: 'account', label: 'Account Safety', icon: ShieldAlert },
+          { id: 'profile', label: t('profileInformation', 'Profile Information'), icon: User },
+          { id: 'preferences', label: t('appPreferences', 'App Preferences'), icon: Settings },
+          { id: 'saved', label: t('savedDestinations', 'Saved Destinations'), icon: Bookmark },
+          { id: 'account', label: t('accountSafety', 'Account Safety'), icon: ShieldAlert },
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -171,8 +184,16 @@ const ProfileSettings = () => {
 
       {/* TAB 2: PREFERENCES */}
       {activeTab === 'preferences' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in">
-          <h3 className="font-bold text-lg text-slate-900 pb-3 border-b border-slate-100">Regional & App Settings</h3>
+        <form onSubmit={handleSavePreferences} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+            <div>
+              <h3 className="font-bold text-lg text-slate-900">Regional & Currency Settings</h3>
+              <p className="text-xs text-slate-500">Configure your preferred display currency format and travel alerts</p>
+            </div>
+            <span className="px-3 py-1 bg-teal-50 text-teal-700 font-bold text-xs rounded-full border border-teal-200 w-max">
+              Current: {currency.split('—')[0].trim()}
+            </span>
+          </div>
 
           <div className="space-y-4">
             <div>
@@ -180,26 +201,16 @@ const ProfileSettings = () => {
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               >
-                <option value="INR (₹)">Indian Rupee — INR (₹)</option>
                 <option value="USD ($)">US Dollar — USD ($)</option>
+                <option value="INR (₹)">Indian Rupee — INR (₹)</option>
                 <option value="EUR (€)">Euro — EUR (€)</option>
                 <option value="GBP (£)">British Pound — GBP (£)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Language</label>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
-              >
-                <option value="English (US)">English (US)</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
-                <option value="German">German</option>
+                <option value="JPY (¥)">Japanese Yen — JPY (¥)</option>
+                <option value="CAD ($)">Canadian Dollar — CAD ($)</option>
+                <option value="AUD ($)">Australian Dollar — AUD ($)</option>
+                <option value="AED (د.إ)">UAE Dirham — AED (د.إ)</option>
               </select>
             </div>
 
@@ -216,7 +227,17 @@ const ProfileSettings = () => {
               />
             </div>
           </div>
-        </div>
+
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-600/20 flex items-center space-x-1.5 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>Save Preferences</span>
+            </button>
+          </div>
+        </form>
       )}
 
       {/* TAB 3: SAVED DESTINATIONS */}

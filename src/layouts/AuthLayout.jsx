@@ -56,7 +56,7 @@ const AuthLayout = () => {
 
         {/* Footer info */}
         <div className="relative z-10 text-xs text-slate-400">
-          © {new Date().getFullYear()} GlobeTrotter. Hackathon Edition.
+          © {new Date().getFullYear()} GlobeTrotter Travel Technologies. All rights reserved.
         </div>
       </div>
 

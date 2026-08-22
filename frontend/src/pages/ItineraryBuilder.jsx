@@ -50,8 +50,27 @@ import {
   Check,
   X,
   PieChart,
-  ChevronDown
+  ChevronDown,
+  AlertTriangle,
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+
+const getActivitySavingsTip = (act, formatPrice) => {
+  const cat = act.category?.toLowerCase() || '';
+  if (cat.includes('food') || cat.includes('dining')) {
+    return 'Suggestion: You can avoid fine dining; try local street food or self-catered meals to stay within budget.';
+  }
+  if (cat.includes('sightseeing') || cat.includes('culture') || cat.includes('heritage')) {
+    return 'Suggestion: You can avoid paid guided tours; explore free exterior landmarks, public walking trails, or free museum days.';
+  }
+  if (cat.includes('adventure') || cat.includes('nature')) {
+    return 'Suggestion: You can avoid chartered tours; explore public scenic trails or free viewpoints.';
+  }
+  if (cat.includes('shopping') || cat.includes('nightlife')) {
+    return 'Suggestion: You can avoid high cover charges; enjoy open evening walks and night markets.';
+  }
+  return `Suggestion: Skip or replace with a free attraction to reduce trip cost by ${formatPrice(act.cost)}.`;
+};
 
 // Sortable City Stop Component
 const SortableCityStop = ({ 
@@ -59,8 +78,10 @@ const SortableCityStop = ({
   onRemoveStop, 
   onOpenActivityModal, 
   onDeleteActivity,
-  onEditActivity
+  onEditActivity,
+  isOverBudget = false
 }) => {
+  const { t, formatPrice } = useLanguage();
   const {
     attributes,
     listeners,
@@ -78,102 +99,158 @@ const SortableCityStop = ({
 
   const stopTotal = (stop.activities || []).reduce((acc, act) => acc + (act.cost || 0), 0) + (stop.accommodationCost || 0) + (stop.transportCost || 0);
 
+  const getCategoryBadgeClass = (category) => {
+    switch (category?.toLowerCase()) {
+      case 'sightseeing':
+        return 'bg-blue-600 text-white border-blue-700 shadow-xs';
+      case 'food':
+      case 'dining':
+        return 'bg-amber-500 text-white border-amber-600 shadow-xs';
+      case 'culture':
+      case 'heritage':
+        return 'bg-purple-600 text-white border-purple-700 shadow-xs';
+      case 'nature':
+      case 'adventure':
+        return 'bg-emerald-600 text-white border-emerald-700 shadow-xs';
+      case 'shopping':
+      case 'nightlife':
+        return 'bg-rose-600 text-white border-rose-700 shadow-xs';
+      default:
+        return 'bg-indigo-600 text-white border-indigo-700 shadow-xs';
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white rounded-3xl border ${isDragging ? 'border-primary-500 shadow-2xl' : 'border-slate-200/90'} shadow-sm transition-all overflow-hidden`}
+      className={`bg-white rounded-3xl border-2 ${isDragging ? 'border-teal-600 shadow-2xl scale-[1.01]' : 'border-teal-200'} shadow-lg transition-all overflow-hidden`}
     >
-      {/* City Stop Drag Header */}
-      <div className="bg-gradient-to-r from-teal-600 via-teal-700 to-emerald-700 text-white p-4 sm:p-5 flex items-center justify-between shadow-md">
-        <div className="flex items-center space-x-3">
+      {/* City Stop Drag Header - Bold Forest Teal & Emerald */}
+      <div 
+        style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #047857 100%)' }}
+        className="text-white p-5 sm:p-6 flex items-center justify-between shadow-md border-b-2 border-teal-700"
+      >
+        <div className="flex items-center space-x-3.5">
           <button
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing p-2 hover:bg-white/10 text-white rounded-xl transition-colors"
+            className="cursor-grab active:cursor-grabbing p-2 hover:bg-white/20 text-teal-100 hover:text-white rounded-xl transition-colors"
             title="Drag to reorder city stop"
           >
-            <GripVertical className="w-5 h-5" />
+            <GripVertical className="w-5 h-5 text-teal-200" />
           </button>
-          <div className="w-10 h-10 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-white font-extrabold shadow-xs">
-            <MapPin className="w-5 h-5 text-white" />
+          <div 
+            style={{ background: 'rgba(255, 255, 255, 0.22)' }}
+            className="w-12 h-12 rounded-2xl border-2 border-white/40 flex items-center justify-center text-white font-black shadow-md"
+          >
+            <MapPin className="w-6 h-6 text-white stroke-[2.5]" />
           </div>
           <div>
-            <h3 className="text-lg font-black tracking-tight text-white flex items-center space-x-2">
+            <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center space-x-2">
               <span>📍 {stop.cityName}</span>
-              {stop.country && <span className="text-xs font-bold text-teal-100">({stop.country})</span>}
+              {stop.country && (
+                <span className="text-xs font-black bg-white/25 text-white px-3 py-0.5 rounded-full border border-white/40 backdrop-blur-xs">
+                  {stop.country}
+                </span>
+              )}
             </h3>
-            <p className="text-xs text-teal-100 font-semibold">
-              {stop.startDate} – {stop.endDate}
+            <p className="text-xs text-teal-100 font-bold tracking-wide mt-0.5 flex items-center space-x-1.5">
+              <span>🗓️ {stop.startDate} – {stop.endDate}</span>
             </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3">
-          <div className="text-right hidden sm:block bg-black/20 px-3 py-1.5 rounded-xl border border-white/20">
-            <span className="text-[10px] text-teal-100 uppercase tracking-wider block font-bold">Stop Subtotal</span>
-            <span className="text-xs font-black text-white flex items-center justify-end">
-              <IndianRupee className="w-3.5 h-3.5 text-white" />
-              {stopTotal.toLocaleString('en-IN')}
+          <div 
+            style={{ background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(10px)' }}
+            className="text-right hidden sm:block px-4 py-2.5 rounded-2xl border border-teal-300/30 shadow-md"
+          >
+            <span className="text-[10px] text-teal-200 uppercase tracking-wider block font-black">{t('stopSubtotal', 'Stop Subtotal')}</span>
+            <span className="text-base font-black text-white flex items-center justify-end">
+              {formatPrice(stopTotal)}
             </span>
           </div>
 
           <button
-            onClick={() => onRemoveStop(stop.id)}
-            className="p-2 text-white hover:bg-rose-500/30 rounded-xl transition-colors"
-            title="Remove city stop"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemoveStop(stop);
+            }}
+            className="p-3 text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl transition-all cursor-pointer shadow-md active:scale-95 flex items-center justify-center shrink-0 relative z-30"
+            title="Delete whole city and activities"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
       </div>
 
       {/* Activities Timeline List */}
-      <div className="p-5 space-y-3">
+      <div className="p-5 sm:p-6 space-y-4 bg-slate-50">
         {(!stop.activities || stop.activities.length === 0) ? (
-          <div className="py-6 border border-dashed border-slate-200 rounded-2xl text-center space-y-2">
-            <p className="text-xs text-slate-500 font-medium">No activities scheduled for {stop.cityName} yet.</p>
+          <div className="py-8 border-2 border-dashed border-teal-200 rounded-2xl text-center space-y-3 bg-white">
+            <p className="text-xs font-bold text-slate-500">No activities scheduled for {stop.cityName} yet.</p>
             <button
               onClick={() => onOpenActivityModal(stop)}
-              className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-xl text-xs font-bold transition-colors"
+              style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)' }}
+              className="inline-flex items-center space-x-1.5 px-5 py-2.5 text-white rounded-xl text-xs font-black shadow-md shadow-teal-800/30 transition-all hover:scale-105 active:scale-95"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Activity</span>
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>{t('addActivity', 'Add Activity')}</span>
             </button>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {stop.activities.map((act) => (
               <div
                 key={act.id}
-                className="group flex items-center justify-between bg-white hover:bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-xs transition-all"
+                className="group flex items-center justify-between bg-white hover:bg-teal-50/40 p-4 sm:p-4.5 rounded-2xl border-2 border-slate-200 hover:border-teal-500 shadow-sm transition-all"
               >
                 <div className="flex items-center space-x-3.5 min-w-0">
-                  <span className="px-3 py-1.5 bg-slate-100 border border-slate-300 text-slate-950 font-black text-xs rounded-xl shrink-0 flex items-center space-x-1 shadow-2xs">
-                    <Clock className="w-3.5 h-3.5 text-primary-600" />
-                    <span className="text-slate-950 font-black">{act.time || '10:00'}</span>
+                  <span className="px-3.5 py-1.5 bg-slate-900 border border-slate-800 text-white font-black text-xs rounded-xl shrink-0 flex items-center space-x-1.5 shadow-xs">
+                    <Clock className="w-3.5 h-3.5 text-teal-400" />
+                    <span className="text-white font-black">{act.time || '10:00'}</span>
                   </span>
 
-                  <div className="min-w-0">
-                    <h4 className="font-black text-base text-slate-950 tracking-tight leading-snug">{act.name}</h4>
-                    <span className="text-[11px] font-extrabold text-primary-800 bg-primary-50 border border-primary-200 px-2.5 py-0.5 rounded-md inline-block mt-0.5">
-                      {act.category || 'Sightseeing'}
-                    </span>
+                  <div className="min-w-0 flex-1 pr-2">
+                    <h4 className="font-black text-base text-slate-900 tracking-tight leading-snug">{act.name}</h4>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className={`text-[11px] font-black border px-3 py-0.5 rounded-lg inline-block ${getCategoryBadgeClass(act.category)}`}>
+                        {act.category || 'Sightseeing'}
+                      </span>
+                      {isOverBudget && (act.cost || 0) > 0 && (
+                        <span className="text-[11px] font-black text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-lg inline-flex items-center gap-1 shadow-2xs">
+                          ⚠️ Can Avoid
+                        </span>
+                      )}
+                    </div>
+                    {isOverBudget && (act.cost || 0) > 0 && (
+                      <p className="text-xs text-amber-900 bg-amber-50/90 border border-amber-200/80 rounded-xl px-3 py-1.5 mt-2 font-medium leading-relaxed">
+                        💡 {getActivitySavingsTip(act, formatPrice)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-3 shrink-0">
-                  <span className="font-black text-sm text-slate-950 flex items-center bg-slate-100 px-3 py-1 rounded-xl border border-slate-300 shadow-2xs">
-                    <IndianRupee className="w-3.5 h-3.5 text-slate-700 mr-0.5" />
-                    {act.cost === 0 ? 'Free' : act.cost?.toLocaleString('en-IN')}
-                  </span>
+                  {act.cost === 0 ? (
+                    <span className="font-black text-xs text-white bg-emerald-600 px-4 py-1.5 rounded-xl shadow-xs tracking-wide uppercase">
+                      {t('free', 'Free')}
+                    </span>
+                  ) : (
+                    <span className="font-black text-sm text-white bg-slate-900 px-4 py-1.5 rounded-xl shadow-xs flex items-center">
+                      {formatPrice(act.cost)}
+                    </span>
+                  )}
 
                   <button
                     onClick={() => onDeleteActivity(stop.id, act.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-rose-600 rounded-xl transition-all"
                     title="Remove Activity"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -185,10 +262,11 @@ const SortableCityStop = ({
         <div className="pt-2 flex justify-end">
           <button
             onClick={() => onOpenActivityModal(stop)}
-            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center space-x-1.5 transition-colors"
+            style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)' }}
+            className="px-6 py-3 text-white rounded-xl text-xs font-black shadow-lg shadow-teal-800/30 flex items-center space-x-2 transition-all hover:scale-105 active:scale-95 uppercase tracking-wide cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>+ Add Activity</span>
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>{t('addActivity', 'Add Activity')}</span>
           </button>
         </div>
       </div>
@@ -200,6 +278,7 @@ const ItineraryBuilder = () => {
   const { id: tripId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { t, formatPrice } = useLanguage();
 
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -357,21 +436,40 @@ const ItineraryBuilder = () => {
     }
   };
 
-  // Delete City Stop
+  // Delete whole city stop and all its activities from the trip
+  const handleDeleteStop = async (stopOrId) => {
+    const stopId = typeof stopOrId === 'object' ? stopOrId?.id : stopOrId;
+    const cityName = typeof stopOrId === 'object' ? stopOrId?.cityName : 'City';
+    if (!stopId) return;
+    const targetId = String(stopId);
+
+    // 1. Instantly update UI state and persist with updateTrip
+    setTrip((prev) => {
+      if (!prev) return prev;
+      const updatedStops = (prev.stops || []).filter(
+        (s) => String(s.id) !== targetId && String(s._id) !== targetId
+      );
+      updateTrip(tripId || prev.id, { stops: updatedStops });
+      return {
+        ...prev,
+        stops: updatedStops,
+      };
+    });
+
+    // 2. Persist with deleteTripStop API
+    try {
+      await deleteTripStop(tripId || trip?.id, targetId);
+      showToast(`${cityName} stop and all its activities removed!`, 'info');
+    } catch (err) {
+      console.error('Error removing stop:', err);
+      showToast('Failed to remove stop', 'error');
+    }
+  };
+
   const handleConfirmRemoveStop = async () => {
     if (!deletingStopId) return;
-    try {
-      await deleteTripStop(trip.id, deletingStopId);
-      setTrip((prev) => ({
-        ...prev,
-        stops: prev.stops.filter((s) => s.id !== deletingStopId),
-      }));
-      showToast('City stop removed', 'info');
-    } catch (err) {
-      showToast('Failed to remove stop', 'error');
-    } finally {
-      setDeletingStopId(null);
-    }
+    await handleDeleteStop(deletingStopId);
+    setDeletingStopId(null);
   };
 
   // Share Link generator
@@ -410,6 +508,9 @@ const ItineraryBuilder = () => {
     const actSum = (stop.activities || []).reduce((aSum, a) => aSum + (a.cost || 0), 0);
     return acc + actSum + (stop.accommodationCost || 0) + (stop.transportCost || 0);
   }, 0);
+
+  const targetBudget = trip.targetBudget || 50000;
+  const isOverBudget = totalStopsCost > targetBudget;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto animate-in fade-in duration-300">
@@ -494,16 +595,14 @@ const ItineraryBuilder = () => {
           <div className="bg-black/40 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
             <span className="text-slate-400 block mb-0.5">Calculated Total Cost:</span>
             <span className="text-lg font-extrabold text-teal-400 flex items-center">
-              <IndianRupee className="w-4 h-4" />
-              {totalStopsCost.toLocaleString('en-IN')}
+              {formatPrice(totalStopsCost)}
             </span>
           </div>
 
           <div className="bg-black/40 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
             <span className="text-slate-400 block mb-0.5">Target Budget Limit:</span>
             <span className="text-lg font-extrabold text-white flex items-center">
-              <IndianRupee className="w-4 h-4" />
-              {(trip.targetBudget || 50000).toLocaleString('en-IN')}
+              {formatPrice(trip.targetBudget || 50000)}
             </span>
           </div>
 
@@ -525,20 +624,22 @@ const ItineraryBuilder = () => {
         </div>
       </div>
 
+
+
       {/* Main Drag-and-Drop City Stops Container */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Itinerary Route & Activities</h2>
-            <p className="text-xs text-slate-500">Drag handle to reorder city sequence. Add or remove activities per stop.</p>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{t('itineraryRoute', 'Itinerary Route & Activities')}</h2>
+            <p className="text-xs text-slate-500">{t('itineraryDesc', 'Drag handle to reorder city sequence. Add or remove activities per stop.')}</p>
           </div>
 
           <button
             onClick={() => setShowAddCityModal(true)}
-            className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-600/20 flex items-center space-x-1.5 transition-colors"
+            className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md shadow-primary-600/20 flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Add City Stop</span>
+            <span>+ {t('addCityStop', 'Add City Stop')}</span>
           </button>
         </div>
 
@@ -568,9 +669,10 @@ const ItineraryBuilder = () => {
                   <SortableCityStop
                     key={stop.id}
                     stop={stop}
-                    onRemoveStop={(id) => setDeletingStopId(id)}
+                    onRemoveStop={handleDeleteStop}
                     onOpenActivityModal={(s) => setActiveStopForActivity(s)}
                     onDeleteActivity={handleDeleteActivity}
+                    isOverBudget={isOverBudget}
                   />
                 ))}
               </div>
